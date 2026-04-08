@@ -2,27 +2,52 @@ import AdvisoryCard from "@/components/AdvisoryCard";
 import MetricGrid from "@/components/MetricGrid";
 import StatusCard from "@/components/StatusCard";
 import TrendChart from "@/components/TrendChart";
+import { fetchLatestFeed, fetchHistoryFeed } from "@/lib/thingspeak";
+import { parseSample, smoothSamples } from "@/lib/preprocess";
+import { evaluateWater } from "@/lib/advisory";
 
-async function getLatest() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/advisory`, {
-    cache: "no-store",
-  });
-  return res.json();
-}
-
-async function getHistory() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/history`, {
-    cache: "no-store",
-  });
-  return res.json();
-}
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const latest = await getLatest();
-  const history = await getHistory();
+  let sample = {
+    time: new Date().toISOString(),
+    pH: 0,
+    temp: 0,
+    tds: 0,
+    turbidity: 0,
+  };
 
-  const sample = latest.sample;
-  const advisory = latest.advisory;
+  let advisory = {
+    overallStatus: "Unsafe" as const,
+    drinking: "ডেটা পাওয়া যায়নি",
+    cooking: "ডেটা পাওয়া যায়নি",
+    bathing: "ডেটা পাওয়া যায়নি",
+    irrigation: "ডেটা পাওয়া যায়নি",
+    livestock: "ডেটা পাওয়া যায়নি",
+    summaryBn: "ThingSpeak থেকে ডেটা আনা যায়নি।",
+    score: 0,
+    reasons: ["ডেটা সংযোগ ব্যর্থ"],
+  };
+
+  let history: {
+    time: string;
+    pH: number;
+    temp: number;
+    tds: number;
+    turbidity: number;
+  }[] = [];
+
+  try {
+    const latestFeed = await fetchLatestFeed();
+    sample = parseSample(latestFeed);
+    advisory = evaluateWater(sample);
+
+    const historyData = await fetchHistoryFeed(100);
+    const parsedHistory = (historyData.feeds || []).map(parseSample);
+    history = smoothSamples(parsedHistory);
+  } catch (error) {
+    console.error("Home page data load failed:", error);
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -57,7 +82,11 @@ export default async function HomePage() {
           <AdvisoryCard title="গবাদি পশুর ব্যবহার" value={advisory.livestock} />
           <AdvisoryCard
             title="সমস্যার কারণ"
-            value={advisory.reasons.length ? advisory.reasons.join(", ") : "উল্লেখযোগ্য সমস্যা নেই"}
+            value={
+              advisory.reasons.length
+                ? advisory.reasons.join(", ")
+                : "উল্লেখযোগ্য সমস্যা নেই"
+            }
           />
         </div>
 

@@ -1,13 +1,25 @@
 import TrendChart from "@/components/TrendChart";
+import { fetchHistoryFeed } from "@/lib/thingspeak";
+import { parseSample, smoothSamples } from "@/lib/preprocess";
 
-async function getHistory() {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const res = await fetch(`${base}/api/history`, { cache: "no-store" });
-  return res.json();
-}
+export const dynamic = "force-dynamic";
 
 export default async function TrendsPage() {
-  const history = await getHistory();
+  let history: {
+    time: string;
+    pH: number;
+    temp: number;
+    tds: number;
+    turbidity: number;
+  }[] = [];
+
+  try {
+    const historyData = await fetchHistoryFeed(150);
+    const parsedHistory = (historyData.feeds || []).map(parseSample);
+    history = smoothSamples(parsedHistory);
+  } catch (error) {
+    console.error("Trends page load failed:", error);
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
