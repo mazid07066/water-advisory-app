@@ -11,6 +11,7 @@ export async function GET() {
     const parser = new Parser({
       fields: ["time", "pH", "temp", "tds", "turbidity"],
     });
+
     const csv = parser.parse(feeds);
 
     return new NextResponse(csv, {
