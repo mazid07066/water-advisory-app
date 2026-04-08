@@ -1,151 +1,180 @@
 from pathlib import Path
 import pandas as pd
+import numpy as np
 
 BASE = Path(__file__).resolve().parents[1]
-DATA = BASE / "data"
-OUT = BASE / "outputs"
-OUT.mkdir(parents=True, exist_ok=True)
+DATA_DIR = BASE / "data"
+OUT_DIR = BASE / "outputs"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-files = [
+FILES = [
     ("feed_kauser_12_30_brahamaputra.csv", "brahmaputra"),
     ("feed_kauser_2_05_pond water.csv", "pond"),
     ("feed_kauser_rain water_1_05.csv", "rain"),
     ("feed_kauser_drinking water_1_35.csv", "drinking"),
 ]
 
-frames = []
+def load_and_label(filepath: Path, label: str) -> pd.DataFrame:
+    df = pd.read_csv(filepath)
+    df["source_label"] = label
+    return df
 
-def read_csv_robust(path: Path) -> pd.DataFrame:
-    encodings_to_try = [
-        "utf-8",
-        "utf-8-sig",
-        "cp1252",
-        "latin1",
-        "iso-8859-1",
-    ]
+def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    rename_map = {
+        "field1": "pH",
+        "field2": "temp",
+        "field3": "tds",
+        "field4": "turbidity",
+        "Temp": "temp",
+        "Temperature": "temp",
+        "temperature": "temp",
+        "TDS ppm/L": "tds",
+        "TDS": "tds",
+        "TU (NTU)": "turbidity",
+        "Turbidity": "turbidity",
+    }
 
-    last_error = None
-    for enc in encodings_to_try:
-        try:
-            df = pd.read_csv(path, encoding=enc)
-            print(f"[OK] Loaded {path.name} with encoding: {enc}")
-            return df
-        except Exception as e:
-            last_error = e
+    df = df.rename(columns=rename_map)
 
-    raise last_error
+    needed = ["created_at", "entry_id", "pH", "temp", "tds", "turbidity", "source_label"]
+    for col in needed:
+        if col not in df.columns:
+            df[col] = np.nan
 
-for filename, label in files:
-    path = DATA / filename
+    return df[needed].copy()
 
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
+def clean_numeric(df: pd.DataFrame) -> pd.DataFrame:
+    for col in ["pH", "temp", "tds", "turbidity"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df = read_csv_robust(path)
-    df["label"] = label
-    frames.append(df)
+    # Convert Fahrenheit to Celsius if likely in F
+    mask_f = df["temp"].between(45, 130, inclusive="both")
+    df.loc[mask_f, "temp"] = (df.loc[mask_f, "temp"] - 32) * 5 / 9
 
-df = pd.concat(frames, ignore_index=True)
+    # Soft clipping for noisy low-cost sensors
+    df["pH"] = df["pH"].clip(lower=0, upper=14)
+    df["temp"] = df["temp"].clip(lower=0, upper=60)
+    df["tds"] = df["tds"].clip(lower=0, upper=5000)
+    df["turbidity"] = df["turbidity"].clip(lower=0, upper=5000)
 
-# Clean column names first
-df.columns = [str(col).strip() for col in df.columns]
+    return df
 
-print("\nDetected original columns:")
-print(list(df.columns))
+def fill_missing_by_source(df: pd.DataFrame) -> pd.DataFrame:
+    fallback = {
+        "pH": 7.0,
+        "temp": 25.0,
+        "tds": 300.0,
+        "turbidity": 10.0,
+    }
 
-# Rename columns to standard names
-rename_map = {
-    "field1": "pH",
-    "field2": "temp",
-    "field3": "tds",
-    "field4": "turbidity",
-    "pH": "pH",
-    "PH": "pH",
-    "Temp": "temp",
-    "Temp °": "temp",
-    "Temp ©": "temp",
-    "Temperature": "temp",
-    "TDS ppm/L": "tds",
-    "TDS": "tds",
-    "TU (NTU)": "turbidity",
-    "Turbidity": "turbidity",
-    "created_at": "created_at",
-    "entry_id": "entry_id",
-}
+    for col in ["pH", "temp", "tds", "turbidity"]:
+        df[col] = df.groupby("source_label")[col].transform(
+            lambda s: s.fillna(s.median())
+        )
+        df[col] = df[col].fillna(fallback[col])
 
-df = df.rename(columns=rename_map)
+    return df
 
-print("\nColumns after rename:")
-print(list(df.columns))
+def add_smoothed_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.sort_values(by=["source_label", "entry_id"], na_position="last").reset_index(drop=True)
 
-required_cols = ["pH", "temp", "tds", "turbidity", "label"]
-missing = [c for c in required_cols if c not in df.columns]
+    for col in ["pH", "temp", "tds", "turbidity"]:
+        df[f"{col}_smooth"] = (
+            df.groupby("source_label")[col]
+            .transform(lambda s: s.rolling(window=5, min_periods=1, center=True).median())
+        )
 
-if missing:
-    print("\n[WARNING] Missing expected columns:", missing)
-    print("Available columns are:", list(df.columns))
-    raise ValueError("CSV column names do not match expected format.")
+        df[f"{col}_mean3"] = (
+            df.groupby("source_label")[col]
+            .transform(lambda s: s.rolling(window=3, min_periods=1).mean())
+        )
 
-keep_cols = [c for c in ["created_at", "entry_id", "pH", "temp", "tds", "turbidity", "label"] if c in df.columns]
-df = df[keep_cols].copy()
+        df[f"{col}_std3"] = (
+            df.groupby("source_label")[col]
+            .transform(lambda s: s.rolling(window=3, min_periods=1).std().fillna(0))
+        )
 
-# Convert numeric columns
-for col in ["pH", "temp", "tds", "turbidity"]:
-    df[col] = pd.to_numeric(df[col], errors="coerce")
+    return df
 
-# Drop rows where all sensor columns are missing
-df = df.dropna(subset=["pH", "temp", "tds", "turbidity"], how="all").copy()
+def assign_usage_label(row) -> str:
+    """
+    Hybrid weak-label logic:
+    1) Try soft rule-based labeling
+    2) If sensor noise makes rules unreliable, use source-aware fallback
 
-# Temperature correction if likely Fahrenheit
-mask = df["temp"].between(45, 130, inclusive="both")
-df.loc[mask, "temp"] = (df.loc[mask, "temp"] - 32) * 5 / 9
+    This is appropriate for noisy low-cost sensor data in FYDP settings.
+    """
+    source = row["source_label"]
+    pH = row["pH_smooth"]
+    tds = row["tds_smooth"]
+    turb = row["turbidity_smooth"]
 
-# Clip extreme values
-df["pH"] = df["pH"].clip(lower=0, upper=14)
-df["temp"] = df["temp"].clip(lower=0, upper=60)
-df["tds"] = df["tds"].clip(lower=0, upper=3000)
-df["turbidity"] = df["turbidity"].clip(lower=0, upper=500)
+    # Soft rules first
+    if 6.0 <= pH <= 8.8 and tds <= 500 and turb <= 8:
+        return "drinkable"
 
-# Sort
-sort_cols = ["label"]
-if "entry_id" in df.columns:
-    sort_cols.append("entry_id")
-df = df.sort_values(by=sort_cols).reset_index(drop=True)
+    if 5.5 <= pH <= 9.0 and tds <= 800 and turb <= 20:
+        return "household_nonpotable"
 
-# Rolling median smoothing
-for col in ["pH", "temp", "tds", "turbidity"]:
-    df[f"{col}_smooth"] = (
-        df.groupby("label")[col]
-        .transform(lambda s: s.rolling(window=5, min_periods=1, center=True).median())
-    )
+    if 5.0 <= pH <= 9.5 and tds <= 1200 and turb <= 50:
+        return "irrigation_only"
 
-# Initial usage labels
-df["usage_class"] = "treatment_required"
+    # Source-informed fallback
+    # These are weak labels based on expected practical use of source types
+    fallback_map = {
+        "drinking": "drinkable",
+        "rain": "household_nonpotable",
+        "brahmaputra": "irrigation_only",
+        "pond": "unsafe",
+    }
 
-safe_mask = (
-    df["pH_smooth"].between(6.5, 8.5, inclusive="both")
-    & (df["turbidity_smooth"] <= 5)
-    & (df["tds_smooth"] <= 500)
-)
+    return fallback_map.get(source, "unsafe")
 
-irrigation_mask = (
-    (df["tds_smooth"] <= 1000)
-    & (df["turbidity_smooth"] <= 20)
-)
+def add_usage_label(df: pd.DataFrame) -> pd.DataFrame:
+    df["usage_label"] = df.apply(assign_usage_label, axis=1)
+    return df
 
-df.loc[safe_mask, "usage_class"] = "drinkable_or_treatable"
-df.loc[(~safe_mask) & irrigation_mask, "usage_class"] = "irrigation_only"
-df.loc[(df["tds_smooth"] > 1000) | (df["turbidity_smooth"] > 20), "usage_class"] = "unsafe"
+def print_quick_summary(df: pd.DataFrame):
+    print("\nMissing values after cleaning:")
+    print(df[["pH", "temp", "tds", "turbidity"]].isna().sum())
 
-output_path = OUT / "cleaned_dataset.csv"
-df.to_csv(output_path, index=False, encoding="utf-8-sig")
+    print("\nFeature preview:")
+    print(df[[
+        "source_label", "pH", "temp", "tds", "turbidity",
+        "pH_smooth", "temp_smooth", "tds_smooth", "turbidity_smooth",
+        "usage_label"
+    ]].head())
 
-print(f"\nSaved cleaned dataset to: {output_path}")
-print("\nFirst 5 rows:")
-print(df.head())
+    print("\nSource counts:")
+    print(df["source_label"].value_counts())
 
-print("\nLabel counts:")
-print(df["label"].value_counts())
+    print("\nUsage counts:")
+    print(df["usage_label"].value_counts())
 
-print("\nUsage class counts:")
-print(df["usage_class"].value_counts())
+    print("\nUsage by source:")
+    print(pd.crosstab(df["source_label"], df["usage_label"]))
+
+def main():
+    frames = []
+
+    for filename, label in FILES:
+        path = DATA_DIR / filename
+        if not path.exists():
+            raise FileNotFoundError(f"Missing file: {path}")
+        frames.append(load_and_label(path, label))
+
+    df = pd.concat(frames, ignore_index=True)
+    df = standardize_columns(df)
+    df = clean_numeric(df)
+    df = fill_missing_by_source(df)
+    df = add_smoothed_features(df)
+    df = add_usage_label(df)
+
+    output_csv = OUT_DIR / "cleaned_dataset.csv"
+    df.to_csv(output_csv, index=False)
+
+    print(f"Saved cleaned dataset to: {output_csv}")
+    print_quick_summary(df)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,57 @@
+{
+  "task": "source_classification",
+  "accuracy": 0.6875,
+  "features": [
+    "pH_smooth",
+    "temp_smooth",
+    "tds_smooth",
+    "turbidity_smooth",
+    "pH_mean3",
+    "temp_mean3",
+    "tds_mean3",
+    "turbidity_mean3",
+    "pH_std3",
+    "temp_std3",
+    "tds_std3",
+    "turbidity_std3"
+  ],
+  "report": {
+    "brahmaputra": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "drinking": {
+      "precision": 0.3333333333333333,
+      "recall": 0.2,
+      "f1-score": 0.25,
+      "support": 20.0
+    },
+    "pond": {
+      "precision": 0.6,
+      "recall": 0.6,
+      "f1-score": 0.6,
+      "support": 20.0
+    },
+    "rain": {
+      "precision": 0.6785714285714286,
+      "recall": 0.95,
+      "f1-score": 0.7916666666666666,
+      "support": 20.0
+    },
+    "accuracy": 0.6875,
+    "macro avg": {
+      "precision": 0.6529761904761904,
+      "recall": 0.6875,
+      "f1-score": 0.6604166666666667,
+      "support": 80.0
+    },
+    "weighted avg": {
+      "precision": 0.6529761904761905,
+      "recall": 0.6875,
+      "f1-score": 0.6604166666666667,
+      "support": 80.0
+    }
+  }
+}

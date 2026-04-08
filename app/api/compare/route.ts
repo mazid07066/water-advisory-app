@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { sourceProfiles } from "@/lib/sourceProfiles";
+import compareProfiles from "@/data/compare_profiles.json";
+import type { CompareProfile } from "@/lib/types";
 
 export async function GET() {
   try {
-    const sorted = [...sourceProfiles].sort((a, b) => b.score - a.score);
+    const profiles = compareProfiles as CompareProfile[];
+    const sorted = [...profiles].sort((a, b) => b.score - a.score);
 
     return NextResponse.json({
       best: sorted[0],

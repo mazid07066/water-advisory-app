@@ -1,0 +1,57 @@
+{
+  "task": "usage_classification",
+  "accuracy": 0.675,
+  "features": [
+    "pH_smooth",
+    "temp_smooth",
+    "tds_smooth",
+    "turbidity_smooth",
+    "pH_mean3",
+    "temp_mean3",
+    "tds_mean3",
+    "turbidity_mean3",
+    "pH_std3",
+    "temp_std3",
+    "tds_std3",
+    "turbidity_std3"
+  ],
+  "report": {
+    "drinkable": {
+      "precision": 0.391304347826087,
+      "recall": 0.45,
+      "f1-score": 0.4186046511627907,
+      "support": 20.0
+    },
+    "household_nonpotable": {
+      "precision": 0.7894736842105263,
+      "recall": 0.75,
+      "f1-score": 0.7692307692307693,
+      "support": 20.0
+    },
+    "irrigation_only": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "unsafe": {
+      "precision": 0.5555555555555556,
+      "recall": 0.5,
+      "f1-score": 0.5263157894736842,
+      "support": 20.0
+    },
+    "accuracy": 0.675,
+    "macro avg": {
+      "precision": 0.6840833968980422,
+      "recall": 0.675,
+      "f1-score": 0.678537802466811,
+      "support": 80.0
+    },
+    "weighted avg": {
+      "precision": 0.6840833968980423,
+      "recall": 0.675,
+      "f1-score": 0.6785378024668111,
+      "support": 80.0
+    }
+  }
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "drinking",
+    "nameBn": "পানযোগ্য পানি",
+    "nameEn": "Drinking Water",
+    "pH": 1.95,
+    "temp": 25.0,
+    "tds": 394.32,
+    "turbidity": 610.91,
+    "score": 90,
+    "status": "Safe",
+    "bestUseBn": "পান ও রান্নার জন্য উপযোগী",
+    "noteBn": "পানযোগ্য পানি তুলনামূলকভাবে সবচেয়ে নিরাপদ উৎস হিসেবে চিহ্নিত হয়েছে।"
+  },
+  {
+    "id": "rain",
+    "nameBn": "সংরক্ষিত বৃষ্টির পানি",
+    "nameEn": "Stored Rain Water",
+    "pH": 2.01,
+    "temp": 25.0,
+    "tds": 91.32,
+    "turbidity": 483.84,
+    "score": 72,
+    "status": "Caution",
+    "bestUseBn": "গৃহস্থালী ব্যবহারে উপযোগী, কিন্তু সরাসরি পান নয়",
+    "noteBn": "সংরক্ষিত বৃষ্টির পানি গৃহস্থালী কাজে ব্যবহারযোগ্য, তবে সরাসরি পান করা উচিত নয়।"
+  },
+  {
+    "id": "brahmaputra",
+    "nameBn": "ব্রহ্মপুত্র নদীর পানি",
+    "nameEn": "Brahmaputra River Water",
+    "pH": 3.33,
+    "temp": 25.0,
+    "tds": 154.08,
+    "turbidity": 1308.0,
+    "score": 58,
+    "status": "Caution",
+    "bestUseBn": "মূলত সেচের জন্য উপযোগী",
+    "noteBn": "ব্রহ্মপুত্র নদীর পানি কৃষি সেচের জন্য বেশি উপযোগী হিসেবে চিহ্নিত হয়েছে।"
+  },
+  {
+    "id": "pond",
+    "nameBn": "পুকুরের পানি",
+    "nameEn": "Pond Water",
+    "pH": 2.09,
+    "temp": 25.0,
+    "tds": 415.77,
+    "turbidity": 1122.48,
+    "score": 38,
+    "status": "Unsafe",
+    "bestUseBn": "সরাসরি ব্যবহার ঝুঁকিপূর্ণ",
+    "noteBn": "পুকুরের পানি সরাসরি ব্যবহারের জন্য ঝুঁকিপূর্ণ বলে ধরা হয়েছে।"
+  }
+]
