@@ -1,49 +1,23 @@
 import SourceComparisonTable from "@/components/SourceComparisonTable";
 
-const rows = [
-  {
-    source: "ব্রহ্মপুত্র নদীর পানি",
-    count: 100,
-    avgPH: 0,
-    avgTemp: 0,
-    avgTds: 0,
-    avgTurbidity: 0,
-    score: 0,
-    status: "Caution" as const,
-  },
-  {
-    source: "পুকুরের পানি",
-    count: 100,
-    avgPH: 0,
-    avgTemp: 0,
-    avgTds: 0,
-    avgTurbidity: 0,
-    score: 0,
-    status: "Unsafe" as const,
-  },
-  {
-    source: "সংরক্ষিত বৃষ্টির পানি",
-    count: 100,
-    avgPH: 0,
-    avgTemp: 0,
-    avgTds: 0,
-    avgTurbidity: 0,
-    score: 0,
-    status: "Safe" as const,
-  },
-  {
-    source: "পানযোগ্য পানি",
-    count: 100,
-    avgPH: 0,
-    avgTemp: 0,
-    avgTds: 0,
-    avgTurbidity: 0,
-    score: 0,
-    status: "Safe" as const,
-  },
-];
+async function getCompareData() {
+  const base =
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-export default function ComparePage() {
+  const res = await fetch(`${base}/api/compare`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load compare data");
+  }
+
+  return res.json();
+}
+
+export default async function ComparePage() {
+  const rows = await getCompareData();
+
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
