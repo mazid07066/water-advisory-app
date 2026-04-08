@@ -1,20 +1,20 @@
 const CHANNEL_ID = process.env.THINGSPEAK_CHANNEL_ID;
 const READ_API_KEY = process.env.THINGSPEAK_READ_API_KEY;
 
-function ensureEnv() {
+function ensureChannelId() {
   if (!CHANNEL_ID) {
     throw new Error("Missing THINGSPEAK_CHANNEL_ID");
-  }
-
-  if (!READ_API_KEY) {
-    throw new Error("Missing THINGSPEAK_READ_API_KEY");
   }
 }
 
 function buildUrl(path: string): string {
-  ensureEnv();
+  ensureChannelId();
+
   const base = `https://api.thingspeak.com/channels/${CHANNEL_ID}`;
-  return `${base}${path}${path.includes("?") ? "&" : "?"}api_key=${READ_API_KEY}`;
+  const hasQuery = path.includes("?");
+  const keyPart = READ_API_KEY ? `${hasQuery ? "&" : "?"}api_key=${READ_API_KEY}` : "";
+
+  return `${base}${path}${keyPart}`;
 }
 
 export async function fetchLatestFeed() {
@@ -26,7 +26,14 @@ export async function fetchLatestFeed() {
     throw new Error(`ThingSpeak latest fetch failed: ${res.status} ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  // last.json may return an object directly
+  if (!data || typeof data !== "object") {
+    throw new Error("ThingSpeak latest response invalid");
+  }
+
+  return data;
 }
 
 export async function fetchHistoryFeed(results = 100) {
@@ -38,5 +45,11 @@ export async function fetchHistoryFeed(results = 100) {
     throw new Error(`ThingSpeak history fetch failed: ${res.status} ${text}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  if (!data || !Array.isArray(data.feeds)) {
+    throw new Error("ThingSpeak history response invalid");
+  }
+
+  return data;
 }
