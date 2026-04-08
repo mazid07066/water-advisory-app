@@ -18,7 +18,7 @@ export default function ComparePage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-600 text-white p-6 md:p-8 shadow-xl">
           <h1 className="text-3xl md:text-5xl font-extrabold">
-            জল উৎস তুলনা
+            পানি উৎস তুলনা
           </h1>
           <p className="text-lg md:text-xl mt-2 text-blue-50">
             বাস্তব সেন্সর ডেটা ও প্রক্রিয়াজাত বিশ্লেষণের ভিত্তিতে পানির উৎসভিত্তিক তুলনা
