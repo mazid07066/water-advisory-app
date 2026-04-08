@@ -1,0 +1,48 @@
+{
+  "accuracy": 0.75,
+  "features": [
+    "pH_smooth",
+    "temp_smooth",
+    "tds_smooth",
+    "turbidity_smooth"
+  ],
+  "report": {
+    "brahmaputra": {
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1-score": 0.9743589743589743,
+      "support": 20.0
+    },
+    "drinking": {
+      "precision": 0.55,
+      "recall": 0.55,
+      "f1-score": 0.55,
+      "support": 20.0
+    },
+    "pond": {
+      "precision": 0.6666666666666666,
+      "recall": 0.6,
+      "f1-score": 0.631578947368421,
+      "support": 20.0
+    },
+    "rain": {
+      "precision": 0.782608695652174,
+      "recall": 0.9,
+      "f1-score": 0.8372093023255814,
+      "support": 20.0
+    },
+    "accuracy": 0.75,
+    "macro avg": {
+      "precision": 0.7498188405797102,
+      "recall": 0.75,
+      "f1-score": 0.7482868060132443,
+      "support": 80.0
+    },
+    "weighted avg": {
+      "precision": 0.74981884057971,
+      "recall": 0.75,
+      "f1-score": 0.7482868060132442,
+      "support": 80.0
+    }
+  }
+}
