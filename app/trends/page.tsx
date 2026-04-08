@@ -1,21 +1,15 @@
 import TrendChart from "@/components/TrendChart";
 import { fetchHistoryFeed } from "@/lib/thingspeak";
-import { parseSample, smoothSamples } from "@/lib/preprocess";
+import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
 
 export const dynamic = "force-dynamic";
 
 export default async function TrendsPage() {
-  let history: {
-    time: string;
-    pH: number;
-    temp: number;
-    tds: number;
-    turbidity: number;
-  }[] = [];
+  let history: SensorSample[] = [];
 
   try {
     const historyData = await fetchHistoryFeed(150);
-    const parsedHistory = (historyData.feeds || []).map(parseSample);
+    const parsedHistory: SensorSample[] = (historyData.feeds || []).map(parseSample);
     history = smoothSamples(parsedHistory);
   } catch (error) {
     console.error("Trends page load failed:", error);

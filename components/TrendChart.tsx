@@ -11,7 +11,15 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export default function TrendChart({ data }: { data: any[] }) {
+type TrendPoint = {
+  time: string;
+  pH: number;
+  temp: number;
+  tds: number;
+  turbidity: number;
+};
+
+export default function TrendChart({ data }: { data: TrendPoint[] }) {
   return (
     <div className="rounded-2xl border bg-white p-4 shadow h-[420px]">
       <h3 className="text-xl font-bold mb-4">সাম্প্রতিক প্রবণতা</h3>

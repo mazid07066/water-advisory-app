@@ -1,4 +1,4 @@
-import { SensorSample } from "./preprocess";
+import type { SensorSample } from "./preprocess";
 
 export type AdvisoryResult = {
   overallStatus: "Safe" | "Caution" | "Unsafe";
@@ -37,9 +37,14 @@ export function evaluateWater(sample: SensorSample): AdvisoryResult {
   }
 
   let overallStatus: "Safe" | "Caution" | "Unsafe" = "Safe";
-  if (score >= 80) overallStatus = "Safe";
-  else if (score >= 55) overallStatus = "Caution";
-  else overallStatus = "Unsafe";
+
+  if (score >= 80) {
+    overallStatus = "Safe";
+  } else if (score >= 55) {
+    overallStatus = "Caution";
+  } else {
+    overallStatus = "Unsafe";
+  }
 
   let drinking = "পান করার জন্য নিরাপদ";
   let cooking = "রান্নার জন্য ব্যবহারযোগ্য";

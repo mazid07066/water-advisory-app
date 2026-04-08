@@ -5,12 +5,13 @@ function ensureEnv() {
   if (!CHANNEL_ID) {
     throw new Error("Missing THINGSPEAK_CHANNEL_ID");
   }
+
   if (!READ_API_KEY) {
     throw new Error("Missing THINGSPEAK_READ_API_KEY");
   }
 }
 
-function buildUrl(path: string) {
+function buildUrl(path: string): string {
   ensureEnv();
   const base = `https://api.thingspeak.com/channels/${CHANNEL_ID}`;
   return `${base}${path}${path.includes("?") ? "&" : "?"}api_key=${READ_API_KEY}`;

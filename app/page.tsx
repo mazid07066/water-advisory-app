@@ -3,13 +3,13 @@ import MetricGrid from "@/components/MetricGrid";
 import StatusCard from "@/components/StatusCard";
 import TrendChart from "@/components/TrendChart";
 import { fetchLatestFeed, fetchHistoryFeed } from "@/lib/thingspeak";
-import { parseSample, smoothSamples } from "@/lib/preprocess";
-import { evaluateWater } from "@/lib/advisory";
+import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
+import { evaluateWater, type AdvisoryResult } from "@/lib/advisory";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  let sample = {
+  let sample: SensorSample = {
     time: new Date().toISOString(),
     pH: 0,
     temp: 0,
@@ -17,8 +17,8 @@ export default async function HomePage() {
     turbidity: 0,
   };
 
-  let advisory = {
-    overallStatus: "Unsafe" as const,
+  let advisory: AdvisoryResult = {
+    overallStatus: "Unsafe",
     drinking: "ডেটা পাওয়া যায়নি",
     cooking: "ডেটা পাওয়া যায়নি",
     bathing: "ডেটা পাওয়া যায়নি",
@@ -29,13 +29,7 @@ export default async function HomePage() {
     reasons: ["ডেটা সংযোগ ব্যর্থ"],
   };
 
-  let history: {
-    time: string;
-    pH: number;
-    temp: number;
-    tds: number;
-    turbidity: number;
-  }[] = [];
+  let history: SensorSample[] = [];
 
   try {
     const latestFeed = await fetchLatestFeed();
@@ -43,7 +37,7 @@ export default async function HomePage() {
     advisory = evaluateWater(sample);
 
     const historyData = await fetchHistoryFeed(100);
-    const parsedHistory = (historyData.feeds || []).map(parseSample);
+    const parsedHistory: SensorSample[] = (historyData.feeds || []).map(parseSample);
     history = smoothSamples(parsedHistory);
   } catch (error) {
     console.error("Home page data load failed:", error);
@@ -83,7 +77,7 @@ export default async function HomePage() {
           <AdvisoryCard
             title="সমস্যার কারণ"
             value={
-              advisory.reasons.length
+              advisory.reasons.length > 0
                 ? advisory.reasons.join(", ")
                 : "উল্লেখযোগ্য সমস্যা নেই"
             }

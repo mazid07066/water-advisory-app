@@ -1,52 +1,88 @@
-export type SensorSample = {
-  time: string;
-  pH: number;
-  temp: number;
-  tds: number;
-  turbidity: number;
+import type { SensorSample } from "./preprocess";
+
+export type AdvisoryResult = {
+  overallStatus: "Safe" | "Caution" | "Unsafe";
+  drinking: string;
+  cooking: string;
+  bathing: string;
+  irrigation: string;
+  livestock: string;
+  summaryBn: string;
+  score: number;
+  reasons: string[];
 };
 
-function safeNumber(v: any): number {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : 0;
-}
+export function evaluateWater(sample: SensorSample): AdvisoryResult {
+  let score = 100;
+  const reasons: string[] = [];
 
-function normalizeTemp(temp: number): number {
-  // Convert to Celsius if uploaded in Fahrenheit range
-  if (temp > 45 && temp < 130) {
-    return ((temp - 32) * 5) / 9;
+  if (sample.pH < 6.5 || sample.pH > 8.5) {
+    score -= 25;
+    reasons.push("pH নিরাপদ সীমার বাইরে");
   }
-  return temp;
-}
 
-export function parseSample(feed: any): SensorSample {
+  if (sample.turbidity > 5) {
+    score -= 25;
+    reasons.push("পানিতে ঘোলাভাব বেশি");
+  }
+
+  if (sample.tds > 500) {
+    score -= 20;
+    reasons.push("TDS বেশি");
+  }
+
+  if (sample.temp > 35 || sample.temp < 15) {
+    score -= 10;
+    reasons.push("তাপমাত্রা স্বাভাবিক নয়");
+  }
+
+  let overallStatus: "Safe" | "Caution" | "Unsafe" = "Safe";
+
+  if (score >= 80) {
+    overallStatus = "Safe";
+  } else if (score >= 55) {
+    overallStatus = "Caution";
+  } else {
+    overallStatus = "Unsafe";
+  }
+
+  let drinking = "পান করার জন্য নিরাপদ";
+  let cooking = "রান্নার জন্য ব্যবহারযোগ্য";
+  let bathing = "গোসল ও ধোয়ার জন্য ব্যবহারযোগ্য";
+  let irrigation = "সেচের জন্য ব্যবহারযোগ্য";
+  let livestock = "গবাদি পশুর জন্য ব্যবহারযোগ্য";
+  let summaryBn = "পানির মান ভালো।";
+
+  if (overallStatus === "Caution") {
+    drinking = "সরাসরি পান করবেন না; ফিল্টার/ফুটিয়ে ব্যবহার করুন";
+    cooking = "রান্নার আগে পরিশোধন করুন";
+    bathing = "গোসল/ধোয়ার জন্য সাধারণত ব্যবহারযোগ্য";
+    irrigation = "সাধারণ সেচে ব্যবহারযোগ্য";
+    livestock = "সতর্কতার সাথে ব্যবহার করুন";
+    summaryBn = "পানির মান মাঝারি। পান করার আগে পরিশোধন প্রয়োজন।";
+  }
+
+  if (overallStatus === "Unsafe") {
+    drinking = "পান করার জন্য অনিরাপদ";
+    cooking = "রান্নার জন্য সরাসরি ব্যবহার অনুপযুক্ত";
+    bathing = "শুধু সীমিত ব্যবহার";
+    irrigation =
+      sample.turbidity < 20 && sample.tds < 1000
+        ? "সেচে সীমিতভাবে ব্যবহার করা যেতে পারে"
+        : "সেচের জন্যও ঝুঁকিপূর্ণ";
+    livestock = "গবাদি পশুর জন্যও সতর্কতা প্রয়োজন";
+    summaryBn = "পানির মান খারাপ। ব্যবহার করার আগে অবশ্যই ব্যবস্থা নিন।";
+  }
+
   return {
-    time: feed.created_at,
-    pH: safeNumber(feed.field1),
-    temp: normalizeTemp(safeNumber(feed.field2)),
-    tds: safeNumber(feed.field3),
-    turbidity: safeNumber(feed.field4),
+    overallStatus,
+    drinking,
+    cooking,
+    bathing,
+    irrigation,
+    livestock,
+    summaryBn,
+    score: Math.max(0, Math.min(100, score)),
+    reasons,
   };
-}
-
-export function median(values: number[]) {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-export function smoothSamples(samples: SensorSample[]) {
-  return samples.map((sample, i, arr) => {
-    const window = arr.slice(Math.max(0, i - 2), Math.min(arr.length, i + 3));
-    return {
-      time: sample.time,
-      pH: median(window.map((x) => x.pH)),
-      temp: median(window.map((x) => x.temp)),
-      tds: median(window.map((x) => x.tds)),
-      turbidity: median(window.map((x) => x.turbidity)),
-    };
-  });
 }
