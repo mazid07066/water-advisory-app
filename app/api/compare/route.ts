@@ -1,54 +1,18 @@
 import { NextResponse } from "next/server";
+import { sourceProfiles } from "@/lib/sourceProfiles";
 
 export async function GET() {
   try {
-    const rows = [
-      {
-        source: "ব্রহ্মপুত্র নদীর পানি",
-        count: 100,
-        avgPH: 0,
-        avgTemp: 0,
-        avgTds: 0,
-        avgTurbidity: 0,
-        score: 0,
-        status: "Caution",
-      },
-      {
-        source: "পুকুরের পানি",
-        count: 100,
-        avgPH: 0,
-        avgTemp: 0,
-        avgTds: 0,
-        avgTurbidity: 0,
-        score: 0,
-        status: "Unsafe",
-      },
-      {
-        source: "সংরক্ষিত বৃষ্টির পানি",
-        count: 100,
-        avgPH: 0,
-        avgTemp: 0,
-        avgTds: 0,
-        avgTurbidity: 0,
-        score: 0,
-        status: "Safe",
-      },
-      {
-        source: "পানযোগ্য পানি",
-        count: 100,
-        avgPH: 0,
-        avgTemp: 0,
-        avgTds: 0,
-        avgTurbidity: 0,
-        score: 0,
-        status: "Safe",
-      },
-    ];
+    const sorted = [...sourceProfiles].sort((a, b) => b.score - a.score);
 
-    return NextResponse.json(rows);
+    return NextResponse.json({
+      best: sorted[0],
+      worst: sorted[sorted.length - 1],
+      profiles: sorted,
+    });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || "Could not build compare data" },
+      { error: error?.message || "Compare data load failed" },
       { status: 500 }
     );
   }
