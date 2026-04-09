@@ -1,0 +1,46 @@
+{
+  "features": [
+    "pH_smooth",
+    "temp_smooth",
+    "tds_smooth",
+    "turbidity_smooth"
+  ],
+  "mins": {
+    "pH_smooth": 1.73,
+    "temp_smooth": 25.0,
+    "tds_smooth": 1.97,
+    "turbidity_smooth": 70.38
+  },
+  "maxs": {
+    "pH_smooth": 12.0,
+    "temp_smooth": 25.0,
+    "tds_smooth": 3112.09009,
+    "turbidity_smooth": 2876.16992
+  },
+  "centroids": {
+    "brahmaputra": {
+      "pH_smooth": 3.327900000000001,
+      "temp_smooth": 25.0,
+      "tds_smooth": 154.08215235,
+      "turbidity_smooth": 1308.00287175
+    },
+    "drinking": {
+      "pH_smooth": 1.9548500000000002,
+      "temp_smooth": 25.0,
+      "tds_smooth": 394.3160597,
+      "turbidity_smooth": 610.9102040500001
+    },
+    "pond": {
+      "pH_smooth": 2.08965,
+      "temp_smooth": 25.0,
+      "tds_smooth": 415.76540969999985,
+      "turbidity_smooth": 1122.47656795
+    },
+    "rain": {
+      "pH_smooth": 2.0148,
+      "temp_smooth": 25.0,
+      "tds_smooth": 91.3171493,
+      "turbidity_smooth": 483.8439472000001
+    }
+  }
+}

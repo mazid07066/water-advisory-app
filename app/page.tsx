@@ -3,11 +3,19 @@ import MetricGrid from "@/components/MetricGrid";
 import StatusCard from "@/components/StatusCard";
 import TrendChart from "@/components/TrendChart";
 import ActionButtons from "@/components/ActionButtons";
+import PredictionPanel from "@/components/PredictionPanel";
 
 import { fetchLatestFeed, fetchHistoryFeed } from "@/lib/thingspeak";
 import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
 import { evaluateWater, type AdvisoryResult } from "@/lib/advisory";
 import { getDeviceStatus, formatBanglaDateTime } from "@/lib/deviceStatus";
+import {
+  predictSource,
+  predictUsage,
+  sourceLabelBn,
+  usageLabelBn,
+  usageAdviceBn,
+} from "@/lib/mlPredict";
 
 export const dynamic = "force-dynamic";
 
@@ -38,13 +46,22 @@ export default async function HomePage() {
   let usingLastStoredData = false;
   let dataError = false;
 
+  let sourcePrediction = {
+    label: "অজানা",
+    confidence: 0,
+  };
+
+  let usagePrediction = {
+    label: "অজানা",
+    confidence: 0,
+  };
+
+  let usageAdvice = "পূর্বাভাস তৈরি করা যায়নি।";
+
   try {
-    // Latest available ThingSpeak data
     const latestFeed = await fetchLatestFeed();
     sample = parseSample(latestFeed);
 
-    // If last.json exists but values are empty, still keep timestamp,
-    // but mark as fallback-like condition.
     const hasRealValues =
       sample.pH !== 0 ||
       sample.temp !== 0 ||
@@ -54,6 +71,21 @@ export default async function HomePage() {
     if (hasRealValues) {
       advisory = evaluateWater(sample);
       usingLastStoredData = true;
+
+      const srcPred = predictSource(sample);
+      const usePred = predictUsage(sample);
+
+      sourcePrediction = {
+        label: sourceLabelBn(srcPred.label),
+        confidence: srcPred.confidence,
+      };
+
+      usagePrediction = {
+        label: usageLabelBn(usePred.label),
+        confidence: usePred.confidence,
+      };
+
+      usageAdvice = usageAdviceBn(usePred.label);
     } else {
       advisory = {
         overallStatus: "Unsafe",
@@ -71,7 +103,6 @@ export default async function HomePage() {
     deviceStatus = getDeviceStatus(sample.time, 30);
     lastUpdatedText = formatBanglaDateTime(sample.time);
 
-    // Historical chart data
     const historyData = await fetchHistoryFeed(100);
     const parsed = (historyData.feeds || []).map(parseSample);
     history = smoothSamples(parsed);
@@ -83,7 +114,6 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-green-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* HEADER */}
         <header className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-600 text-white p-6 md:p-8 shadow-xl border border-blue-500">
           <div className="max-w-4xl">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight text-white drop-shadow-sm">
@@ -132,14 +162,20 @@ export default async function HomePage() {
           </div>
         </header>
 
-        {/* STATUS */}
         <StatusCard
           status={advisory.overallStatus}
           score={advisory.score}
           summary={advisory.summaryBn}
         />
 
-        {/* METRICS */}
+        <PredictionPanel
+          sourceLabelBn={sourcePrediction.label}
+          sourceConfidence={sourcePrediction.confidence}
+          usageLabelBn={usagePrediction.label}
+          usageConfidence={usagePrediction.confidence}
+          adviceBn={usageAdvice}
+        />
+
         <MetricGrid
           pH={sample.pH}
           temp={sample.temp}
@@ -147,7 +183,6 @@ export default async function HomePage() {
           turbidity={sample.turbidity}
         />
 
-        {/* ADVISORY */}
         <div className="grid md:grid-cols-2 gap-4">
           <AdvisoryCard title="পান করা" value={advisory.drinking} emoji="🥤" />
           <AdvisoryCard title="রান্না" value={advisory.cooking} emoji="🍲" />
@@ -161,7 +196,6 @@ export default async function HomePage() {
           />
         </div>
 
-        {/* TREND */}
         <TrendChart data={history} />
       </div>
     </main>
