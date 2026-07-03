@@ -4,11 +4,11 @@ import StatusCard from "@/components/StatusCard";
 import TrendChart from "@/components/TrendChart";
 import ActionButtons from "@/components/ActionButtons";
 import PredictionPanel from "@/components/PredictionPanel";
+import DeviceStatusBadge from "@/components/DeviceStatusBadge";
 
 import { fetchLatestFeed, fetchHistoryFeed } from "@/lib/thingspeak";
 import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
 import { evaluateWater, type AdvisoryResult } from "@/lib/advisory";
-import { getDeviceStatus, formatBanglaDateTime } from "@/lib/deviceStatus";
 import {
   predictSource,
   predictUsage,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/mlPredict";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   let sample: SensorSample = {
@@ -41,9 +42,6 @@ export default async function HomePage() {
   };
 
   let history: SensorSample[] = [];
-  let deviceStatus: "ON" | "OFF" = "OFF";
-  let lastUpdatedText = "অজানা সময়";
-  let usingLastStoredData = false;
   let dataError = false;
 
   let sourcePrediction = {
@@ -70,7 +68,6 @@ export default async function HomePage() {
 
     if (hasRealValues) {
       advisory = evaluateWater(sample);
-      usingLastStoredData = true;
 
       const srcPred = predictSource(sample);
       const usePred = predictUsage(sample);
@@ -86,22 +83,7 @@ export default async function HomePage() {
       };
 
       usageAdvice = usageAdviceBn(usePred.label);
-    } else {
-      advisory = {
-        overallStatus: "Unsafe",
-        drinking: "সর্বশেষ ডেটা অসম্পূর্ণ",
-        cooking: "সর্বশেষ ডেটা অসম্পূর্ণ",
-        bathing: "সর্বশেষ ডেটা অসম্পূর্ণ",
-        irrigation: "সর্বশেষ ডেটা অসম্পূর্ণ",
-        livestock: "সর্বশেষ ডেটা অসম্পূর্ণ",
-        summaryBn: "ThingSpeak-এ সর্বশেষ ডেটা আছে, কিন্তু সেটি অসম্পূর্ণ।",
-        score: 0,
-        reasons: ["অসম্পূর্ণ ডেটা"],
-      };
     }
-
-    deviceStatus = getDeviceStatus(sample.time, 30);
-    lastUpdatedText = formatBanglaDateTime(sample.time);
 
     const historyData = await fetchHistoryFeed(100);
     const parsed = (historyData.feeds || []).map(parseSample);
@@ -128,27 +110,11 @@ export default async function HomePage() {
               <span className="inline-flex items-center rounded-xl bg-white/18 px-4 py-2 text-sm md:text-base font-semibold text-white backdrop-blur-sm border border-white/20 shadow-sm">
                 📍 উৎস: Brahmaputra River Sample
               </span>
-
-              <span
-                className={`inline-flex items-center rounded-xl px-4 py-2 text-sm md:text-base font-semibold border shadow-sm ${
-                  deviceStatus === "ON"
-                    ? "bg-emerald-500/20 text-white border-emerald-200/40"
-                    : "bg-rose-500/20 text-white border-rose-200/40"
-                }`}
-              >
-                {deviceStatus === "ON" ? "🟢 সেন্সর স্ট্যাটাস: ON" : "🔴 সেন্সর স্ট্যাটাস: OFF"}
-              </span>
             </div>
 
-            <p className="mt-3 text-sm md:text-base font-medium text-blue-100">
-              ⏱ সর্বশেষ আপডেট: {lastUpdatedText}
-            </p>
-
-            {!dataError && usingLastStoredData && deviceStatus === "OFF" && (
-              <p className="mt-2 text-sm md:text-base font-medium text-amber-100">
-                ⚠️ সেন্সর বর্তমানে বন্ধ। শেষ আপলোড হওয়া ডেটা দেখানো হচ্ছে।
-              </p>
-            )}
+            <div className="mt-4">
+              <DeviceStatusBadge lastUpdatedIso={sample.time} />
+            </div>
 
             {dataError && (
               <p className="mt-2 text-sm md:text-base font-medium text-rose-100">
@@ -191,7 +157,11 @@ export default async function HomePage() {
           <AdvisoryCard title="গবাদি পশু" value={advisory.livestock} emoji="🐄" />
           <AdvisoryCard
             title="সমস্যার কারণ"
-            value={advisory.reasons.length > 0 ? advisory.reasons.join(", ") : "উল্লেখযোগ্য সমস্যা নেই"}
+            value={
+              advisory.reasons.length > 0
+                ? advisory.reasons.join(", ")
+                : "উল্লেখযোগ্য সমস্যা নেই"
+            }
             emoji="⚠️"
           />
         </div>
