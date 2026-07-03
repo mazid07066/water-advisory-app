@@ -5,6 +5,7 @@ import TrendChart from "@/components/TrendChart";
 import ActionButtons from "@/components/ActionButtons";
 import PredictionPanel from "@/components/PredictionPanel";
 import DeviceStatusBadge from "@/components/DeviceStatusBadge";
+import LocationSourceCard from "@/components/LocationSourceCard";
 
 import { fetchLatestFeed, fetchHistoryFeed } from "@/lib/thingspeak";
 import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
@@ -106,10 +107,8 @@ export default async function HomePage() {
               পানির মান দেখে সহজ ভাষায় ব্যবহার পরামর্শ
             </p>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center rounded-xl bg-white/18 px-4 py-2 text-sm md:text-base font-semibold text-white backdrop-blur-sm border border-white/20 shadow-sm">
-                📍 উৎস: Brahmaputra River Sample
-              </span>
+            <div className="mt-5">
+              <LocationSourceCard />
             </div>
 
             <div className="mt-4">
