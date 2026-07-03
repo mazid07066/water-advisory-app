@@ -12,6 +12,8 @@ type LocationData = {
   lat: string;
   lng: string;
   method: "browser" | "manual";
+  accuracy?: number | null;
+  capturedAt?: string;
 };
 
 const STORAGE_KEY = "water_advisor_location";
@@ -19,6 +21,7 @@ const STORAGE_KEY = "water_advisor_location";
 function isValidLatLng(lat: string, lng: string) {
   const la = Number(lat);
   const lo = Number(lng);
+
   return (
     Number.isFinite(la) &&
     Number.isFinite(lo) &&
@@ -29,12 +32,32 @@ function isValidLatLng(lat: string, lng: string) {
   );
 }
 
+function formatCapturedTime(iso?: string) {
+  if (!iso) return "অজানা";
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "অজানা";
+
+  return date.toLocaleString("en-GB", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function LocationSourceCard() {
   const [location, setLocation] = useState<LocationData>({
     label: "",
     lat: "",
     lng: "",
     method: "manual",
+    accuracy: null,
+    capturedAt: "",
   });
 
   const [saved, setSaved] = useState<LocationData | null>(null);
@@ -65,6 +88,8 @@ export default function LocationSourceCard() {
       lat: Number(data.lat).toFixed(6),
       lng: Number(data.lng).toFixed(6),
       method: data.method,
+      accuracy: data.accuracy ?? null,
+      capturedAt: data.capturedAt || new Date().toISOString(),
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(finalData));
@@ -74,7 +99,12 @@ export default function LocationSourceCard() {
   }
 
   function saveManualLocation() {
-    save({ ...location, method: "manual" });
+    save({
+      ...location,
+      method: "manual",
+      accuracy: null,
+      capturedAt: new Date().toISOString(),
+    });
   }
 
   function useCurrentLocation() {
@@ -94,6 +124,8 @@ export default function LocationSourceCard() {
           lat: String(position.coords.latitude),
           lng: String(position.coords.longitude),
           method: "browser",
+          accuracy: position.coords.accuracy,
+          capturedAt: new Date().toISOString(),
         });
 
         setLoading(false);
@@ -118,12 +150,22 @@ export default function LocationSourceCard() {
       lat: "",
       lng: "",
       method: "manual",
+      accuracy: null,
+      capturedAt: "",
     });
     setMessage("লোকেশন মুছে ফেলা হয়েছে।");
   }
 
-  const mapUrl = saved
+  const googleMapUrl = saved
     ? `https://www.google.com/maps?q=${saved.lat},${saved.lng}`
+    : "";
+
+  const osmUrl = saved
+    ? `https://www.openstreetmap.org/?mlat=${saved.lat}&mlon=${saved.lng}#map=16/${saved.lat}/${saved.lng}`
+    : "";
+
+  const satelliteUrl = saved
+    ? `https://www.google.com/maps/@${saved.lat},${saved.lng},17z/data=!3m1!1e3`
     : "";
 
   return (
@@ -133,16 +175,49 @@ export default function LocationSourceCard() {
       </h3>
 
       {saved ? (
-        <div className="space-y-3">
-          <div>
-            <p className="text-white font-semibold">উৎস: {saved.label}</p>
-            <p className="text-blue-50 text-sm md:text-base">
-              Latitude: {saved.lat} | Longitude: {saved.lng}
-            </p>
-            <p className="text-blue-100 text-xs md:text-sm font-medium">
-              পদ্ধতি:{" "}
-              {saved.method === "browser" ? "ব্রাউজার লোকেশন" : "ম্যানুয়াল ইনপুট"}
-            </p>
+        <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">উৎসের নাম</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {saved.label}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">লোকেশন পদ্ধতি</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {saved.method === "browser" ? "ব্রাউজার GPS" : "ম্যানুয়াল ইনপুট"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">Latitude</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {saved.lat}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">Longitude</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {saved.lng}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">GPS Accuracy</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {saved.accuracy ? `±${saved.accuracy.toFixed(1)} m` : "ম্যানুয়াল / অজানা"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/15 border border-white/20 p-3">
+              <p className="text-xs font-semibold text-blue-100">লোকেশন নেওয়ার সময়</p>
+              <p className="text-white font-bold text-base md:text-lg">
+                {formatCapturedTime(saved.capturedAt)}
+              </p>
+            </div>
           </div>
 
           <LocationMap
@@ -152,13 +227,39 @@ export default function LocationSourceCard() {
           />
 
           <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              onClick={useCurrentLocation}
+              disabled={loading}
+              className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold shadow hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {loading ? "আপডেট হচ্ছে..." : "📡 লোকেশন আপডেট"}
+            </button>
+
             <a
-              href={mapUrl}
+              href={googleMapUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-xl bg-white text-blue-700 px-4 py-2 text-sm font-bold shadow hover:bg-blue-50"
             >
               🗺️ Google Maps
+            </a>
+
+            <a
+              href={osmUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-white text-blue-700 px-4 py-2 text-sm font-bold shadow hover:bg-blue-50"
+            >
+              🌍 OpenStreetMap
+            </a>
+
+            <a
+              href={satelliteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-white text-blue-700 px-4 py-2 text-sm font-bold shadow hover:bg-blue-50"
+            >
+              🛰️ Satellite
             </a>
 
             <button
@@ -168,27 +269,39 @@ export default function LocationSourceCard() {
               মুছে ফেলুন
             </button>
           </div>
+
+          {message && (
+            <p className="text-sm md:text-base font-semibold text-amber-100">
+              {message}
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
           <div className="grid md:grid-cols-3 gap-2">
             <input
               value={location.label}
-              onChange={(e) => setLocation({ ...location, label: e.target.value })}
+              onChange={(e) =>
+                setLocation({ ...location, label: e.target.value })
+              }
               placeholder="উৎসের নাম, যেমন Brahmaputra River"
               className="rounded-xl px-3 py-3 text-slate-900 outline-none text-base"
             />
 
             <input
               value={location.lat}
-              onChange={(e) => setLocation({ ...location, lat: e.target.value })}
+              onChange={(e) =>
+                setLocation({ ...location, lat: e.target.value })
+              }
               placeholder="Latitude"
               className="rounded-xl px-3 py-3 text-slate-900 outline-none text-base"
             />
 
             <input
               value={location.lng}
-              onChange={(e) => setLocation({ ...location, lng: e.target.value })}
+              onChange={(e) =>
+                setLocation({ ...location, lng: e.target.value })
+              }
               placeholder="Longitude"
               className="rounded-xl px-3 py-3 text-slate-900 outline-none text-base"
             />
@@ -209,6 +322,14 @@ export default function LocationSourceCard() {
             >
               ✍️ ম্যানুয়ালি সংরক্ষণ
             </button>
+          </div>
+
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+            <p className="text-sm md:text-base text-blue-50 leading-7">
+              লোকেশন দিলে পানির নমুনা কোথা থেকে সংগ্রহ করা হয়েছে তা মানচিত্রে
+              দেখা যাবে। কোনো GPS হার্ডওয়্যার ছাড়াই ব্রাউজার লোকেশন বা ম্যানুয়াল
+              Latitude/Longitude ব্যবহার করা যায়।
+            </p>
           </div>
 
           {message && (

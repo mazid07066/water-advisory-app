@@ -1,56 +1,61 @@
-export type DeviceState = "LIVE" | "DELAYED" | "OFFLINE";
+export type DeviceState = "ON" | "OFF";
 
 export type DeviceStatusInfo = {
   state: DeviceState;
   labelBn: string;
   messageBn: string;
-  ageTextBn: string;
+  lastUpdatedText: string;
+  minutesAgo: number | null;
+  isLive: boolean;
 };
+
+export function getDeviceStatus(
+  lastUpdatedIso: string,
+  thresholdMinutes = 30
+): DeviceState {
+  const lastUpdated = new Date(lastUpdatedIso).getTime();
+
+  if (Number.isNaN(lastUpdated)) {
+    return "OFF";
+  }
+
+  const now = Date.now();
+  const diffMinutes = (now - lastUpdated) / (1000 * 60);
+
+  return diffMinutes <= thresholdMinutes ? "ON" : "OFF";
+}
 
 export function getDeviceStatusInfo(
   lastUpdatedIso: string,
-  liveThresholdMinutes = 2,
-  delayedThresholdMinutes = 10
+  thresholdMinutes = 30
 ): DeviceStatusInfo {
   const lastUpdated = new Date(lastUpdatedIso).getTime();
 
   if (Number.isNaN(lastUpdated)) {
     return {
-      state: "OFFLINE",
+      state: "OFF",
       labelBn: "সেন্সর স্ট্যাটাস: OFF",
-      messageBn: "সর্বশেষ আপডেটের সময় পাওয়া যায়নি।",
-      ageTextBn: "সময় অজানা",
+      messageBn: "সর্বশেষ আপডেট সময় পাওয়া যায়নি।",
+      lastUpdatedText: "অজানা সময়",
+      minutesAgo: null,
+      isLive: false,
     };
   }
 
-  const diffMs = Date.now() - lastUpdated;
-  const diffMinutes = diffMs / (1000 * 60);
-
-  const ageTextBn = formatAgeBn(diffMs);
-
-  if (diffMinutes <= liveThresholdMinutes) {
-    return {
-      state: "LIVE",
-      labelBn: "সেন্সর স্ট্যাটাস: ON",
-      messageBn: "লাইভ সেন্সর ডেটা দেখানো হচ্ছে।",
-      ageTextBn,
-    };
-  }
-
-  if (diffMinutes <= delayedThresholdMinutes) {
-    return {
-      state: "DELAYED",
-      labelBn: "সেন্সর স্ট্যাটাস: DELAYED",
-      messageBn: "ডেটা কিছুটা পুরোনো। সর্বশেষ আপলোড হওয়া ডেটা দেখানো হচ্ছে।",
-      ageTextBn,
-    };
-  }
+  const now = Date.now();
+  const diffMinutes = Math.max(0, Math.floor((now - lastUpdated) / (1000 * 60)));
+  const state: DeviceState = diffMinutes <= thresholdMinutes ? "ON" : "OFF";
 
   return {
-    state: "OFFLINE",
-    labelBn: "সেন্সর স্ট্যাটাস: OFF",
-    messageBn: "সেন্সর বর্তমানে বন্ধ বা সংযোগ বিচ্ছিন্ন। শেষ আপলোড হওয়া ডেটা দেখানো হচ্ছে।",
-    ageTextBn,
+    state,
+    labelBn: state === "ON" ? "সেন্সর স্ট্যাটাস: ON" : "সেন্সর স্ট্যাটাস: OFF",
+    messageBn:
+      state === "ON"
+        ? "সেন্সর বর্তমানে সক্রিয় আছে।"
+        : "সেন্সর বর্তমানে বন্ধ। শেষ আপলোড হওয়া ডেটা দেখানো হচ্ছে।",
+    lastUpdatedText: formatBanglaDateTime(lastUpdatedIso),
+    minutesAgo: diffMinutes,
+    isLive: state === "ON",
   };
 }
 
@@ -71,29 +76,4 @@ export function formatBanglaDateTime(iso: string): string {
     second: "2-digit",
     hour12: true,
   });
-}
-
-export function formatAgeBn(diffMs: number): string {
-  if (!Number.isFinite(diffMs) || diffMs < 0) {
-    return "এইমাত্র";
-  }
-
-  const seconds = Math.floor(diffMs / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) {
-    return `${seconds} সেকেন্ড আগে`;
-  }
-
-  if (minutes < 60) {
-    return `${minutes} মিনিট আগে`;
-  }
-
-  if (hours < 24) {
-    return `${hours} ঘণ্টা আগে`;
-  }
-
-  return `${days} দিন আগে`;
 }

@@ -1,9 +1,20 @@
+import { calibrateSample, type RawSensorValues } from "@/lib/calibration";
+
 export type SensorSample = {
   time: string;
+
+  // calibrated values used by dashboard and decision engine
   pH: number;
   temp: number;
   tds: number;
   turbidity: number;
+
+  // raw values preserved for technical transparency
+  rawPH?: number;
+  rawTemp?: number;
+  rawTDS?: number;
+  rawTurbidity?: number;
+
   statusCode?: number;
   mappingMode?: "current_web" | "old_nodemcu" | "unknown";
 };
@@ -14,7 +25,6 @@ function safeNumber(value: unknown): number {
 }
 
 function normalizeTemp(value: number): number {
-  // Fahrenheit to Celsius
   if (value > 45 && value < 130) {
     return ((value - 32) * 5) / 9;
   }
@@ -53,42 +63,52 @@ export function parseSample(feed: any): SensorSample {
   const field2LooksTemp = isLikelyTemperature(f2);
   const field4LooksTemp = isLikelyTemperature(f4);
 
-  // Your current ThingSpeak data matches this:
-  // field2 = 78.202 Fahrenheit → 25.67 °C
+  let raw: RawSensorValues;
+  let mappingMode: SensorSample["mappingMode"];
+
   if (field2LooksTemp && !field4LooksTemp) {
-    return {
-      time: feed?.created_at ?? new Date().toISOString(),
+    raw = {
       pH: f1,
-      temp: normalizeTemp(f2),
+      temp: f2,
       tds: f3,
       turbidity: f4,
-      statusCode: f5,
-      mappingMode: "current_web",
     };
-  }
-
-  // If later old NodeMCU mapping is detected
-  if (!field2LooksTemp && field4LooksTemp) {
-    return {
-      time: feed?.created_at ?? new Date().toISOString(),
+    mappingMode = "current_web";
+  } else if (!field2LooksTemp && field4LooksTemp) {
+    raw = {
       pH: f1,
-      temp: normalizeTemp(f4),
+      temp: f4,
       tds: f2,
       turbidity: f3,
-      statusCode: f5,
-      mappingMode: "old_nodemcu",
     };
+    mappingMode = "old_nodemcu";
+  } else {
+    raw = {
+      pH: f1,
+      temp: f2,
+      tds: f3,
+      turbidity: f4,
+    };
+    mappingMode = "unknown";
   }
 
-  // Safe fallback: use current website mapping
+  const calibrated = calibrateSample(raw);
+
   return {
     time: feed?.created_at ?? new Date().toISOString(),
-    pH: f1,
-    temp: normalizeTemp(f2),
-    tds: f3,
-    turbidity: f4,
+
+    pH: calibrated.pH,
+    temp: calibrated.temp,
+    tds: calibrated.tds,
+    turbidity: calibrated.turbidity,
+
+    rawPH: raw.pH,
+    rawTemp: raw.temp,
+    rawTDS: raw.tds,
+    rawTurbidity: raw.turbidity,
+
     statusCode: f5,
-    mappingMode: "unknown",
+    mappingMode,
   };
 }
 
@@ -112,13 +132,11 @@ export function smoothSamples(samples: SensorSample[]): SensorSample[] {
     const window = arr.slice(Math.max(0, i - 2), Math.min(arr.length, i + 3));
 
     return {
-      time: sample.time,
+      ...sample,
       pH: median(window.map((x) => x.pH)),
       temp: median(window.map((x) => x.temp)),
       tds: median(window.map((x) => x.tds)),
       turbidity: median(window.map((x) => x.turbidity)),
-      statusCode: sample.statusCode,
-      mappingMode: sample.mappingMode,
     };
   });
 }
