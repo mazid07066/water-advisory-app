@@ -1,99 +1,269 @@
 import SourceComparisonTable from "@/components/SourceComparisonTable";
 import SourceHighlightCard from "@/components/SourceHighlightCard";
+
 import compareProfiles from "@/data/compare_profiles.json";
-import type { CompareProfile } from "@/lib/types";
 
-export const dynamic = "force-static";
+import { getLanguage } from "@/lib/getLanguage";
+import {
+  getDictionary,
+  type Language,
+} from "@/lib/i18n";
 
-export default function ComparePage() {
-  const profiles = [...(compareProfiles as CompareProfile[])].sort(
-    (a, b) => b.score - a.score
-  );
+import type {
+  CompareProfile,
+} from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+type LocalizedSource = CompareProfile & {
+  displayName: string;
+  displaySubtitle: string;
+  displayUse: string;
+  displayNote: string;
+};
+
+const EnglishSourceContent: Record<
+  string,
+  {
+    name: string;
+    subtitle: string;
+    use: string;
+    note: string;
+  }
+> = {
+  drinking: {
+    name: "Treated Drinking Water",
+    subtitle: "Reference treated-water profile",
+    use:
+      "Drinking and cooking after laboratory verification",
+    note:
+      "The pH and estimated TDS are comparatively acceptable. Microbial contamination, arsenic, and other pollutants must still be tested separately.",
+  },
+
+  rain: {
+    name: "Stored Rainwater",
+    subtitle: "Stored rainwater profile",
+    use:
+      "Household use after treatment and verification",
+    note:
+      "Low TDS does not guarantee safety. The storage container, roof catchment, and microbial contamination should be assessed.",
+  },
+
+  brahmaputra: {
+    name: "Brahmaputra River Water",
+    subtitle: "River-water reference profile",
+    use:
+      "Irrigation and non-potable use after testing",
+    note:
+      "River-water quality may change rapidly with season, sampling location, wastewater discharge, and sediment load.",
+  },
+
+  pond: {
+    name: "Pond Water",
+    subtitle: "Pond-water reference profile",
+    use:
+      "Not for drinking or cooking without testing and treatment",
+    note:
+      "Pond water may contain microbial and organic contamination that the current sensors cannot detect.",
+  },
+};
+
+function localizeProfile(
+  profile: CompareProfile,
+  language: Language
+): LocalizedSource {
+  if (language === "bn") {
+    return {
+      ...profile,
+      displayName: profile.nameBn,
+      displaySubtitle: profile.nameEn,
+      displayUse: profile.bestUseBn,
+      displayNote: profile.noteBn,
+    };
+  }
+
+  const EnglishContent =
+    EnglishSourceContent[profile.id];
+
+  return {
+    ...profile,
+
+    displayName:
+      EnglishContent?.name ??
+      profile.nameEn,
+
+    displaySubtitle:
+      EnglishContent?.subtitle ??
+      profile.nameEn,
+
+    displayUse:
+      EnglishContent?.use ??
+      profile.bestUseBn,
+
+    displayNote:
+      EnglishContent?.note ??
+      profile.noteBn,
+  };
+}
+
+export default async function ComparePage() {
+  const language = await getLanguage();
+  const dictionary = getDictionary(language);
+  const text = dictionary.compare;
+
+  const profiles = (
+    compareProfiles as CompareProfile[]
+  )
+    .map((profile) =>
+      localizeProfile(profile, language)
+    )
+    .sort(
+      (first, second) =>
+        second.score - first.score
+    );
 
   const best = profiles[0];
-  const worst = profiles[profiles.length - 1];
+  const worst =
+    profiles[profiles.length - 1];
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-emerald-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <header className="rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-600 text-white p-6 md:p-8 shadow-xl">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white">
-            পানি উৎস তুলনা
-          </h1>
-
-          <p className="text-lg md:text-xl mt-2 text-blue-50">
-            ক্যালিব্রেটেড সেন্সর ডেটা ও ব্যবহারযোগ্যতার ভিত্তিতে পানির উৎসভিত্তিক তুলনা
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-600 p-6 text-white shadow-xl md:p-8">
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-100">
+            {language === "bn"
+              ? "উৎসভিত্তিক বিশ্লেষণ"
+              : "Source-based analysis"}
           </p>
 
-          <p className="mt-3 inline-flex rounded-full bg-white/15 px-4 py-2 text-sm md:text-base font-semibold backdrop-blur text-white">
-            📊 ব্রহ্মপুত্র অঞ্চল, পুকুর, বৃষ্টির পানি ও পানযোগ্য উৎসের তুলনা
+          <h1 className="mt-2 text-3xl font-extrabold md:text-5xl">
+            {text.title}
+          </h1>
+
+          <p className="mt-3 max-w-5xl text-lg leading-8 text-blue-50 md:text-xl">
+            {text.description}
+          </p>
+
+          <p className="mt-4 inline-flex rounded-full border border-white/20 bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur md:text-base">
+            📊{" "}
+            {language === "bn"
+              ? "ব্রহ্মপুত্র অঞ্চল, পুকুর, সংরক্ষিত বৃষ্টির পানি এবং পরিশোধিত পানির তুলনা"
+              : "Comparison of Brahmaputra River water, pond water, stored rainwater, and treated water"}
           </p>
         </header>
 
-        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow">
-          <h2 className="text-xl md:text-2xl font-bold text-amber-900">
-            ক্যালিব্রেশন নোট
-          </h2>
-          <p className="mt-2 text-base md:text-lg text-amber-900 leading-8">
-            এই টেবিলে কাঁচা সেন্সর ডেটা সরাসরি দেখানো হয়নি। pH ও ঘোলাভাবের
-            অস্বাভাবিক কাঁচা মানকে ক্যালিব্রেশন ও বাস্তব পানির মানদণ্ড অনুযায়ী
-            সংশোধিত বিশ্লেষণ হিসেবে দেখানো হয়েছে। মূল কাঁচা ডেটা ThingSpeak ও
-            CSV লগে সংরক্ষিত আছে।
-          </p>
-        </section>
+        {best && worst ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SourceHighlightCard
+              title={text.best}
+              source={best}
+              tone="best"
+              language={language}
+            />
 
-        <div className="grid lg:grid-cols-2 gap-4">
-          <SourceHighlightCard
-            title="সবচেয়ে ভালো উৎস"
-            source={best}
-            tone="best"
-          />
-          <SourceHighlightCard
-            title="সবচেয়ে ঝুঁকিপূর্ণ উৎস"
-            source={worst}
-            tone="worst"
-          />
-        </div>
+            <SourceHighlightCard
+              title={text.worst}
+              source={worst}
+              tone="worst"
+              language={language}
+            />
+          </div>
+        ) : null}
 
         <section className="space-y-3">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
-              উৎসভিত্তিক তুলনামূলক টেবিল
+            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
+              {text.tableTitle}
             </h2>
-            <p className="text-slate-600 text-base">
-              এই টেবিলটি ক্যালিব্রেটেড গড় মান, নিরাপত্তা স্কোর এবং ব্যবহারযোগ্যতার সারাংশ দেখায়।
+
+            <p className="mt-2 text-base leading-7 text-slate-600">
+              {language === "bn"
+                ? "এই টেবিলটি pH, আনুমানিক TDS, তাপমাত্রা, নিরাপত্তা স্কোর এবং প্রস্তাবিত ব্যবহারের তুলনা দেখায়।"
+                : "This table compares pH, estimated TDS, temperature, safety score, and suggested use for each source."}
             </p>
           </div>
 
-          <SourceComparisonTable rows={profiles} />
+          <SourceComparisonTable
+            rows={profiles}
+            language={language}
+          />
         </section>
 
-        <section className="rounded-3xl bg-white border border-slate-200 shadow-lg p-6">
-          <h3 className="text-2xl font-bold text-slate-900 mb-3">
-            সিদ্ধান্তের সারাংশ
+        {best && worst ? (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+            <h3 className="text-2xl font-bold text-slate-900">
+              {text.summary}
+            </h3>
+
+            <div className="mt-3 space-y-3 text-base leading-8 text-slate-800 md:text-lg">
+              <p>
+                {language === "bn" ? (
+                  <>
+                    <span className="font-bold text-emerald-700">
+                      {best.displayName}
+                    </span>{" "}
+                    বর্তমানে তুলনামূলকভাবে সবচেয়ে ভালো
+                    উৎস হিসেবে চিহ্নিত হয়েছে।
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-emerald-700">
+                      {best.displayName}
+                    </span>{" "}
+                    has the highest comparative score
+                    among the listed profiles.
+                  </>
+                )}
+              </p>
+
+              <p>
+                {language === "bn" ? (
+                  <>
+                    <span className="font-bold text-rose-700">
+                      {worst.displayName}
+                    </span>{" "}
+                    তুলনামূলকভাবে সবচেয়ে বেশি
+                    ঝুঁকিপূর্ণ উৎস হিসেবে দেখা যাচ্ছে।
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-rose-700">
+                      {worst.displayName}
+                    </span>{" "}
+                    has the lowest comparative score
+                    among the listed profiles.
+                  </>
+                )}
+              </p>
+
+              <p>
+                {language === "bn"
+                  ? "এই তুলনা ব্রহ্মপুত্র তীরবর্তী পরিবার, কৃষক এবং স্থানীয় ব্যবহারকারীদের জন্য প্রাথমিক সিদ্ধান্ত সহায়তা প্রদান করতে পারে।"
+                  : "This comparison can support preliminary decisions for households, farmers, and local users in the Brahmaputra region."}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="rounded-3xl border border-blue-200 bg-blue-50 p-6 shadow-md">
+          <h3 className="text-xl font-black text-blue-950">
+            {language === "bn"
+              ? "গুরুত্বপূর্ণ সীমাবদ্ধতা"
+              : "Important limitation"}
           </h3>
 
-          <div className="space-y-3 text-base md:text-lg text-slate-800 leading-8">
-            <p>
-              <span className="font-bold text-emerald-700">
-                {best.nameBn}
-              </span>{" "}
-              বর্তমানে তুলনামূলকভাবে সবচেয়ে ভালো উৎস হিসেবে চিহ্নিত হয়েছে।
-            </p>
+          <p className="mt-3 text-base font-semibold leading-7 text-blue-950">
+            {language === "bn"
+              ? "তুলনামূলক প্রোফাইলগুলো প্রদর্শনী ও সিদ্ধান্ত-সহায়তার জন্য প্রস্তুত করা হয়েছে। এগুলো একই সময়ে একই পরীক্ষাগারে যাচাইকৃত পানযোগ্যতার সনদ নয়।"
+              : "The comparison profiles are intended for demonstration and decision support. They are not simultaneous laboratory-certified potability results."}
+          </p>
 
-            <p>
-              <span className="font-bold text-rose-700">
-                {worst.nameBn}
-              </span>{" "}
-              সবচেয়ে বেশি ঝুঁকিপূর্ণ উৎস হিসেবে দেখা যাচ্ছে।
-            </p>
-
-            <p>
-              ব্রহ্মপুত্র তীরবর্তী পরিবার, কৃষক এবং স্থানীয় ব্যবহারকারীরা এই
-              বিশ্লেষণ ব্যবহার করে পান, রান্না, ধোয়া-মোছা ও সেচের সিদ্ধান্ত
-              দ্রুত নিতে পারবেন।
-            </p>
-          </div>
+          <p className="mt-2 text-base font-semibold leading-7 text-blue-950">
+            {language === "bn"
+              ? "বর্তমান হার্ডওয়্যার ব্যাকটেরিয়া, ভাইরাস, আর্সেনিক, ভারী ধাতু, কীটনাশক বা টার্বিডিটি পরিমাপ করে না।"
+              : "The current hardware does not measure bacteria, viruses, arsenic, heavy metals, pesticides, or turbidity."}
+          </p>
         </section>
       </div>
     </main>

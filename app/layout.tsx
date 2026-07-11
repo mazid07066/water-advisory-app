@@ -1,21 +1,28 @@
+import type { Metadata } from "next";
+
+import AppHeader from "@/components/AppHeader";
+import { getLanguage } from "@/lib/getLanguage";
+
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 
-export const metadata = {
-  title: "Water Advisory App",
-  description: "Smart water monitoring system",
+export const metadata: Metadata = {
+  title: "Pani Bondhu Water Advisor",
+  description:
+    "Bilingual IoT-based water-quality monitoring and advisory platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
+  const language = await getLanguage();
+
   return (
-    <html lang="en">
+    <html lang={language}>
       <body>
-        <Navbar />
+        <AppHeader language={language} />
         {children}
       </body>
     </html>

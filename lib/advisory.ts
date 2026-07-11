@@ -5,150 +5,205 @@ import type {
   WaterStatus,
 } from "@/lib/types";
 
-function assessPH(value: number | null): ParameterAssessment {
+import type { Language } from "@/lib/i18n";
+
+function assessPH(
+  value: number | null,
+  language: Language
+): ParameterAssessment {
   if (value === null) {
     return {
       status: "unavailable",
-      labelBn: "তথ্য নেই",
-      messageBn: "pH পরিমাপ পাওয়া যায়নি।",
+      labelBn:
+        language === "bn"
+          ? "তথ্য নেই"
+          : "Unavailable",
+      messageBn:
+        language === "bn"
+          ? "pH পরিমাপ পাওয়া যায়নি।"
+          : "No pH measurement is available.",
     };
   }
 
   if (value >= 6.5 && value <= 8.5) {
     return {
       status: "good",
-      labelBn: "গ্রহণযোগ্য সীমা",
-      messageBn: "pH সাধারণ গ্রহণযোগ্য সীমার মধ্যে রয়েছে।",
+      labelBn:
+        language === "bn"
+          ? "গ্রহণযোগ্য সীমা"
+          : "Acceptable range",
+      messageBn:
+        language === "bn"
+          ? "pH সাধারণ গ্রহণযোগ্য সীমার মধ্যে রয়েছে।"
+          : "The pH is within the generally acceptable range.",
     };
   }
 
   if (value >= 6.0 && value <= 9.0) {
     return {
       status: "caution",
-      labelBn: "সতর্কতা",
-      messageBn: "pH আদর্শ সীমার বাইরে; ব্যবহার-পূর্ব যাচাই প্রয়োজন।",
+      labelBn:
+        language === "bn"
+          ? "সতর্কতা"
+          : "Caution",
+      messageBn:
+        language === "bn"
+          ? "pH আদর্শ সীমার বাইরে; ব্যবহার-পূর্ব যাচাই প্রয়োজন।"
+          : "The pH is outside the preferred range and should be verified before use.",
     };
   }
 
   return {
     status: "unsafe",
-    labelBn: "ঝুঁকিপূর্ণ",
-    messageBn: "pH নিরাপদ ব্যবহার নির্দেশনার সীমার বাইরে।",
+    labelBn:
+      language === "bn"
+        ? "ঝুঁকিপূর্ণ"
+        : "High risk",
+    messageBn:
+      language === "bn"
+        ? "pH নিরাপদ ব্যবহার নির্দেশনার সীমার বাইরে।"
+        : "The pH is outside the preliminary safe-use range.",
   };
 }
 
-function assessTDS(value: number | null): ParameterAssessment {
+function assessTDS(
+  value: number | null,
+  language: Language
+): ParameterAssessment {
   if (value === null) {
     return {
       status: "unavailable",
-      labelBn: "তথ্য নেই",
-      messageBn: "TDS পরিমাপ পাওয়া যায়নি।",
+      labelBn:
+        language === "bn"
+          ? "তথ্য নেই"
+          : "Unavailable",
+      messageBn:
+        language === "bn"
+          ? "TDS পরিমাপ পাওয়া যায়নি।"
+          : "No TDS measurement is available.",
     };
   }
 
   if (value <= 500) {
     return {
       status: "good",
-      labelBn: "নিম্ন বা মাঝারি",
-      messageBn: "আনুমানিক TDS 500 ppm বা তার নিচে।",
+      labelBn:
+        language === "bn"
+          ? "নিম্ন বা মাঝারি"
+          : "Low or moderate",
+      messageBn:
+        language === "bn"
+          ? "আনুমানিক TDS 500 ppm বা তার নিচে।"
+          : "The estimated TDS is 500 ppm or below.",
     };
   }
 
   if (value <= 1000) {
     return {
       status: "caution",
-      labelBn: "উচ্চ",
+      labelBn:
+        language === "bn"
+          ? "উচ্চ"
+          : "Elevated",
       messageBn:
-        "আনুমানিক TDS 500–1000 ppm; পান করার আগে পরীক্ষাগার যাচাই প্রয়োজন।",
+        language === "bn"
+          ? "আনুমানিক TDS 500–1000 ppm; পান করার আগে পরীক্ষাগার যাচাই প্রয়োজন।"
+          : "The estimated TDS is between 500 and 1000 ppm; laboratory verification is recommended before drinking.",
     };
   }
 
   return {
     status: "unsafe",
-    labelBn: "অত্যধিক উচ্চ",
+    labelBn:
+      language === "bn"
+        ? "অত্যধিক উচ্চ"
+        : "Very high",
     messageBn:
-      "আনুমানিক TDS 1000 ppm-এর বেশি; সরাসরি পান না করার পরামর্শ।",
+      language === "bn"
+        ? "আনুমানিক TDS 1000 ppm-এর বেশি; সরাসরি পান না করার পরামর্শ।"
+        : "The estimated TDS exceeds 1000 ppm; direct drinking is not advised.",
   };
 }
 
-function assessTemperature(value: number | null): ParameterAssessment {
+function assessTemperature(
+  value: number | null,
+  language: Language
+): ParameterAssessment {
   if (value === null) {
     return {
       status: "unavailable",
-      labelBn: "তথ্য নেই",
-      messageBn: "তাপমাত্রার তথ্য পাওয়া যায়নি।",
+      labelBn:
+        language === "bn"
+          ? "তথ্য নেই"
+          : "Unavailable",
+      messageBn:
+        language === "bn"
+          ? "তাপমাত্রার তথ্য পাওয়া যায়নি।"
+          : "No temperature measurement is available.",
     };
   }
 
   if (value >= 5 && value <= 40) {
     return {
       status: "good",
-      labelBn: "স্বাভাবিক পরিসর",
-      messageBn: "সেন্সর তাপমাত্রা কার্যকর পরিমাপ পরিসরে রয়েছে।",
+      labelBn:
+        language === "bn"
+          ? "স্বাভাবিক পরিসর"
+          : "Normal measurement range",
+      messageBn:
+        language === "bn"
+          ? "সেন্সর তাপমাত্রা কার্যকর পরিমাপ পরিসরে রয়েছে।"
+          : "The measured temperature is within the sensor's normal operating range.",
     };
   }
 
   return {
     status: "caution",
-    labelBn: "অস্বাভাবিক",
-    messageBn: "তাপমাত্রা যাচাই করা প্রয়োজন।",
+    labelBn:
+      language === "bn"
+        ? "অস্বাভাবিক"
+        : "Abnormal",
+    messageBn:
+      language === "bn"
+        ? "তাপমাত্রা যাচাই করা প্রয়োজন।"
+        : "The temperature reading should be verified.",
   };
 }
 
-function statusPriority(
+function priority(
   status: ParameterAssessment["status"]
 ): number {
-  switch (status) {
-    case "unsafe":
-      return 3;
-    case "caution":
-      return 2;
-    case "unavailable":
-      return 1;
-    default:
-      return 0;
-  }
+  if (status === "unsafe") return 3;
+  if (status === "caution") return 2;
+  if (status === "unavailable") return 1;
+  return 0;
 }
 
-function deriveOverallStatus(
+function deriveStatus(
   sample: WaterSample,
   assessments: ParameterAssessment[]
 ): WaterStatus {
-  /*
-    The Arduino status code remains authoritative when valid.
-  */
-  if (sample.statusCode === 4) {
-    return "Sensor Error";
-  }
+  if (sample.statusCode === 4) return "Sensor Error";
+  if (sample.statusCode === 3) return "Unsafe";
+  if (sample.statusCode === 2) return "Caution";
 
-  if (sample.statusCode === 3) {
-    return "Unsafe";
-  }
-
-  if (sample.statusCode === 2) {
-    return "Caution";
-  }
-
-  const maximumPriority = Math.max(
-    ...assessments.map((item) => statusPriority(item.status))
+  const maximum = Math.max(
+    ...assessments.map((item) =>
+      priority(item.status)
+    )
   );
 
-  if (maximumPriority >= 3) {
-    return "Unsafe";
-  }
-
-  if (maximumPriority >= 1) {
-    return "Caution";
-  }
+  if (maximum >= 3) return "Unsafe";
+  if (maximum >= 1) return "Caution";
 
   return "Safe";
 }
 
 function calculateScore(
-  overallStatus: WaterStatus,
+  status: WaterStatus,
   assessments: ParameterAssessment[]
 ): number {
-  if (overallStatus === "Sensor Error") {
+  if (status === "Sensor Error") {
     return 0;
   }
 
@@ -159,7 +214,9 @@ function calculateScore(
       score -= 35;
     } else if (assessment.status === "caution") {
       score -= 18;
-    } else if (assessment.status === "unavailable") {
+    } else if (
+      assessment.status === "unavailable"
+    ) {
       score -= 25;
     }
   }
@@ -167,10 +224,21 @@ function calculateScore(
   return Math.max(0, Math.min(100, score));
 }
 
-export function evaluateWater(sample: WaterSample): AdvisoryResult {
-  const phAssessment = assessPH(sample.ph);
-  const tdsAssessment = assessTDS(sample.tds);
-  const temperatureAssessment = assessTemperature(sample.temperature);
+export function evaluateWater(
+  sample: WaterSample,
+  language: Language = "bn"
+): AdvisoryResult {
+  const phAssessment =
+    assessPH(sample.ph, language);
+
+  const tdsAssessment =
+    assessTDS(sample.tds, language);
+
+  const temperatureAssessment =
+    assessTemperature(
+      sample.temperature,
+      language
+    );
 
   const assessments = [
     phAssessment,
@@ -178,18 +246,21 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
     temperatureAssessment,
   ];
 
-  const overallStatus = deriveOverallStatus(sample, assessments);
-  const score = calculateScore(overallStatus, assessments);
+  const overallStatus =
+    deriveStatus(sample, assessments);
+
+  const score =
+    calculateScore(overallStatus, assessments);
 
   const reasons = assessments
     .filter((item) => item.status !== "good")
     .map((item) => item.messageBn);
 
-  if (sample.tds !== null) {
-    reasons.push(
-      "TDS মানটি DFRobot সমীকরণ ও অস্থায়ী সংশোধন ফ্যাক্টরভিত্তিক আনুমানিক মান।"
-    );
-  }
+  reasons.push(
+    language === "bn"
+      ? "TDS মানটি DFRobot সমীকরণ ও অস্থায়ী সংশোধন ফ্যাক্টরভিত্তিক আনুমানিক মান।"
+      : "The TDS value is an estimate based on the DFRobot equation and a provisional correction factor."
+  );
 
   if (overallStatus === "Safe") {
     return {
@@ -197,18 +268,34 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
       score,
 
       drinking:
-        "প্রাথমিক ভৌত-রাসায়নিক স্ক্রিনিং গ্রহণযোগ্য; পান করার আগে জীবাণু, আর্সেনিক ও অন্যান্য দূষকের পরীক্ষাগার পরীক্ষা প্রয়োজন।",
+        language === "bn"
+          ? "প্রাথমিক ভৌত-রাসায়নিক স্ক্রিনিং গ্রহণযোগ্য; পান করার আগে জীবাণু, আর্সেনিক ও অন্যান্য দূষকের পরীক্ষাগার পরীক্ষা প্রয়োজন।"
+          : "The preliminary physicochemical screening is acceptable; laboratory testing for microorganisms, arsenic, and other contaminants is still required before drinking.",
+
       cooking:
-        "রান্নায় ব্যবহারের আগে পানি ফুটিয়ে এবং স্থানীয় স্বাস্থ্য নির্দেশনা অনুসরণ করুন।",
+        language === "bn"
+          ? "রান্নায় ব্যবহারের আগে পানি ফুটিয়ে এবং স্থানীয় স্বাস্থ্য নির্দেশনা অনুসরণ করুন।"
+          : "Boil the water and follow local public-health guidance before using it for cooking.",
+
       bathing:
-        "গোসল ও সাধারণ গৃহস্থালি ব্যবহারে তুলনামূলকভাবে উপযোগী।",
+        language === "bn"
+          ? "গোসল ও সাধারণ গৃহস্থালি ব্যবহারে তুলনামূলকভাবে উপযোগী।"
+          : "It is comparatively suitable for bathing and general household use.",
+
       irrigation:
-        "সেচের জন্য প্রাথমিকভাবে উপযোগী; ফসল ও মাটির লবণাক্ততা বিবেচনা করুন।",
+        language === "bn"
+          ? "সেচের জন্য প্রাথমিকভাবে উপযোগী; ফসল ও মাটির লবণাক্ততা বিবেচনা করুন।"
+          : "It is provisionally suitable for irrigation; consider crop tolerance and soil salinity.",
+
       livestock:
-        "গবাদিপশুর জন্য ব্যবহারের আগে স্থানীয় প্রাণিসম্পদ বিশেষজ্ঞের পরামর্শ নিন।",
+        language === "bn"
+          ? "গবাদিপশুর জন্য ব্যবহারের আগে স্থানীয় প্রাণিসম্পদ বিশেষজ্ঞের পরামর্শ নিন।"
+          : "Consult a local livestock specialist before providing it to animals.",
 
       summaryBn:
-        "পরিমাপকৃত pH, আনুমানিক TDS এবং তাপমাত্রা অনুযায়ী তাৎক্ষণিক বড় ঝুঁকি শনাক্ত হয়নি।",
+        language === "bn"
+          ? "পরিমাপকৃত pH, আনুমানিক TDS এবং তাপমাত্রা অনুযায়ী তাৎক্ষণিক বড় ঝুঁকি শনাক্ত হয়নি।"
+          : "No major immediate risk was identified from the measured pH, estimated TDS, and temperature.",
 
       reasons,
       phAssessment,
@@ -216,7 +303,9 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
       temperatureAssessment,
 
       measurementNoticeBn:
-        "এই প্রোটোটাইপ ব্যাকটেরিয়া, ভাইরাস, আর্সেনিক, ভারী ধাতু বা কীটনাশক শনাক্ত করে না।",
+        language === "bn"
+          ? "এই প্রোটোটাইপ ব্যাকটেরিয়া, ভাইরাস, আর্সেনিক, ভারী ধাতু বা কীটনাশক শনাক্ত করে না।"
+          : "This prototype does not detect bacteria, viruses, arsenic, heavy metals, or pesticides.",
     };
   }
 
@@ -226,18 +315,34 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
       score,
 
       drinking:
-        "সরাসরি পান না করে পরীক্ষাগারে পানি পরীক্ষা করুন।",
+        language === "bn"
+          ? "সরাসরি পান না করে পরীক্ষাগারে পানি পরীক্ষা করুন।"
+          : "Do not drink it directly; arrange laboratory testing.",
+
       cooking:
-        "পরীক্ষা ও প্রয়োজনীয় শোধন ছাড়া রান্নায় ব্যবহার না করাই ভালো।",
+        language === "bn"
+          ? "পরীক্ষা ও প্রয়োজনীয় শোধন ছাড়া রান্নায় ব্যবহার না করাই ভালো।"
+          : "Avoid using it for cooking without testing and appropriate treatment.",
+
       bathing:
-        "সীমিত বাহ্যিক ব্যবহার বিবেচনা করা যেতে পারে; ত্বকের সমস্যা থাকলে এড়িয়ে চলুন।",
+        language === "bn"
+          ? "সীমিত বাহ্যিক ব্যবহার বিবেচনা করা যেতে পারে; ত্বকের সমস্যা থাকলে এড়িয়ে চলুন।"
+          : "Limited external use may be considered; avoid it if users have sensitive skin or skin conditions.",
+
       irrigation:
-        "সেচে ব্যবহারের আগে TDS, ফসলের সহনশীলতা ও মাটির অবস্থা যাচাই করুন।",
+        language === "bn"
+          ? "সেচে ব্যবহারের আগে TDS, ফসলের সহনশীলতা ও মাটির অবস্থা যাচাই করুন।"
+          : "Check TDS, crop tolerance, and soil conditions before irrigation.",
+
       livestock:
-        "গবাদিপশুকে দেওয়ার আগে বিকল্প নিরাপদ উৎস বিবেচনা করুন।",
+        language === "bn"
+          ? "গবাদিপশুকে দেওয়ার আগে বিকল্প নিরাপদ উৎস বিবেচনা করুন।"
+          : "Consider an alternative verified source before providing it to livestock.",
 
       summaryBn:
-        "এক বা একাধিক পরিমাপকৃত মান সতর্কতার সীমায় রয়েছে।",
+        language === "bn"
+          ? "এক বা একাধিক পরিমাপকৃত মান সতর্কতার সীমায় রয়েছে।"
+          : "One or more measured parameters are within the caution range.",
 
       reasons,
       phAssessment,
@@ -245,7 +350,9 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
       temperatureAssessment,
 
       measurementNoticeBn:
-        "সিদ্ধান্তটি সীমিত সেন্সরভিত্তিক স্ক্রিনিং; পরীক্ষাগার সনদ নয়।",
+        language === "bn"
+          ? "সিদ্ধান্তটি সীমিত সেন্সরভিত্তিক স্ক্রিনিং; পরীক্ষাগার সনদ নয়।"
+          : "This is a limited sensor-based screening result, not a laboratory certification.",
     };
   }
 
@@ -254,26 +361,53 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
       overallStatus,
       score: 0,
 
-      drinking: "সেন্সর তথ্য নির্ভরযোগ্য নয়; পানির ব্যবহার সিদ্ধান্ত দেবেন না।",
-      cooking: "সেন্সর পুনঃসংযোগ ও পুনরায় পরিমাপ করুন।",
-      bathing: "পরিমাপ নিশ্চিত না হওয়া পর্যন্ত পরামর্শ স্থগিত।",
-      irrigation: "পরিমাপ পুনরায় গ্রহণ করুন।",
-      livestock: "বিকল্প পরীক্ষিত পানির উৎস ব্যবহার করুন।",
+      drinking:
+        language === "bn"
+          ? "সেন্সর তথ্য নির্ভরযোগ্য নয়; পানির ব্যবহার সিদ্ধান্ত দেবেন না।"
+          : "The sensor data is unreliable; do not make a water-use decision.",
+
+      cooking:
+        language === "bn"
+          ? "সেন্সর পুনঃসংযোগ ও পুনরায় পরিমাপ করুন।"
+          : "Reconnect the sensors and repeat the measurement.",
+
+      bathing:
+        language === "bn"
+          ? "পরিমাপ নিশ্চিত না হওয়া পর্যন্ত পরামর্শ স্থগিত।"
+          : "No recommendation is available until the measurement is verified.",
+
+      irrigation:
+        language === "bn"
+          ? "পরিমাপ পুনরায় গ্রহণ করুন।"
+          : "Repeat the measurement.",
+
+      livestock:
+        language === "bn"
+          ? "বিকল্প পরীক্ষিত পানির উৎস ব্যবহার করুন।"
+          : "Use an alternative verified water source.",
 
       summaryBn:
-        "সেন্সর ত্রুটি বা অসম্পূর্ণ তথ্যের কারণে সিদ্ধান্ত তৈরি করা যায়নি।",
+        language === "bn"
+          ? "সেন্সর ত্রুটি বা অসম্পূর্ণ তথ্যের কারণে সিদ্ধান্ত তৈরি করা যায়নি।"
+          : "A decision could not be generated because of a sensor error or incomplete data.",
 
       reasons:
-        reasons.length > 0
+        reasons.length
           ? reasons
-          : ["সেন্সর ডেটা অসম্পূর্ণ বা ত্রুটিপূর্ণ।"],
+          : [
+              language === "bn"
+                ? "সেন্সর ডেটা অসম্পূর্ণ বা ত্রুটিপূর্ণ।"
+                : "The sensor data is incomplete or invalid.",
+            ],
 
       phAssessment,
       tdsAssessment,
       temperatureAssessment,
 
       measurementNoticeBn:
-        "সঠিক সেন্সর সংযোগ ও স্থিতিশীল পরিমাপ নিশ্চিত করুন।",
+        language === "bn"
+          ? "সঠিক সেন্সর সংযোগ ও স্থিতিশীল পরিমাপ নিশ্চিত করুন।"
+          : "Confirm correct sensor connections and stable measurements.",
     };
   }
 
@@ -282,18 +416,34 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
     score,
 
     drinking:
-      "সরাসরি পান করা অনিরাপদ। পরীক্ষাগার পরীক্ষা ও উপযুক্ত শোধন প্রয়োজন।",
+      language === "bn"
+        ? "সরাসরি পান করা অনিরাপদ। পরীক্ষাগার পরীক্ষা ও উপযুক্ত শোধন প্রয়োজন।"
+        : "Direct drinking is unsafe. Laboratory testing and appropriate treatment are required.",
+
     cooking:
-      "শুধু ফুটানো যথেষ্ট নাও হতে পারে; দূষকের ধরন শনাক্ত করুন।",
+      language === "bn"
+        ? "শুধু ফুটানো যথেষ্ট নাও হতে পারে; দূষকের ধরন শনাক্ত করুন।"
+        : "Boiling alone may not be sufficient; identify the type of contamination.",
+
     bathing:
-      "সতর্কতা ছাড়া ব্যবহার করবেন না, বিশেষ করে শিশু ও সংবেদনশীল ব্যক্তিদের ক্ষেত্রে।",
+      language === "bn"
+        ? "সতর্কতা ছাড়া ব্যবহার করবেন না, বিশেষ করে শিশু ও সংবেদনশীল ব্যক্তিদের ক্ষেত্রে।"
+        : "Do not use it without caution, particularly for children and sensitive users.",
+
     irrigation:
-      "কেবল ফসল, মাটি ও লবণাক্ততা যাচাই করে সীমিত সেচ বিবেচনা করুন।",
+      language === "bn"
+        ? "কেবল ফসল, মাটি ও লবণাক্ততা যাচাই করে সীমিত সেচ বিবেচনা করুন।"
+        : "Consider limited irrigation only after checking crop tolerance, soil condition, and salinity.",
+
     livestock:
-      "গবাদিপশুকে না দেওয়াই নিরাপদ, যতক্ষণ না পরীক্ষা সম্পন্ন হয়।",
+      language === "bn"
+        ? "গবাদিপশুকে না দেওয়াই নিরাপদ, যতক্ষণ না পরীক্ষা সম্পন্ন হয়।"
+        : "Do not provide it to livestock until testing is completed.",
 
     summaryBn:
-      "পরিমাপকৃত এক বা একাধিক মান ঝুঁকিপূর্ণ সীমায় রয়েছে।",
+      language === "bn"
+        ? "পরিমাপকৃত এক বা একাধিক মান ঝুঁকিপূর্ণ সীমায় রয়েছে।"
+        : "One or more measured values are within a high-risk range.",
 
     reasons,
     phAssessment,
@@ -301,6 +451,8 @@ export function evaluateWater(sample: WaterSample): AdvisoryResult {
     temperatureAssessment,
 
     measurementNoticeBn:
-      "এই সিদ্ধান্ত শুধুমাত্র pH, আনুমানিক TDS ও তাপমাত্রার ওপর ভিত্তি করে তৈরি।",
+      language === "bn"
+        ? "এই সিদ্ধান্ত শুধুমাত্র pH, আনুমানিক TDS ও তাপমাত্রার ওপর ভিত্তি করে তৈরি।"
+        : "This decision is based only on pH, estimated TDS, and temperature.",
   };
 }
