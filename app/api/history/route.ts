@@ -1,18 +1,51 @@
-import { NextResponse } from "next/server";
-import { fetchHistoryFeed } from "@/lib/thingspeak";
-import { parseSample, smoothSamples } from "@/lib/preprocess";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+import { fetchHistorySamples } from "@/lib/thingspeak";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function GET(request: NextRequest) {
   try {
-    const data = await fetchHistoryFeed(150);
-    const feeds = data.feeds || [];
-    const parsed = feeds.map(parseSample);
-    const smoothed = smoothSamples(parsed);
-    return NextResponse.json(smoothed);
-  } catch (error: any) {
+    const requestedResults = Number(
+      request.nextUrl.searchParams.get("results") ?? "100"
+    );
+
+    const results = Number.isFinite(requestedResults)
+      ? Math.min(Math.max(Math.trunc(requestedResults), 1), 8000)
+      : 100;
+
+    const samples = await fetchHistorySamples(results);
+
     return NextResponse.json(
-      { error: error.message || "Could not fetch history" },
-      { status: 500 }
+      {
+        success: true,
+        count: samples.length,
+        samples,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to retrieve historical data.";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
     );
   }
 }

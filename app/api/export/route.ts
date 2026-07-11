@@ -1,29 +1,63 @@
-import { NextResponse } from "next/server";
-import { fetchHistoryFeed } from "@/lib/thingspeak";
-import { parseSample } from "@/lib/preprocess";
-import { Parser } from "json2csv";
+import { fetchHistorySamples } from "@/lib/thingspeak";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function csvCell(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  const text = String(value).replaceAll('"', '""');
+
+  return `"${text}"`;
+}
 
 export async function GET() {
   try {
-    const data = await fetchHistoryFeed(200);
-    const feeds = (data.feeds || []).map(parseSample);
+    const samples = await fetchHistorySamples(1000);
 
-    const parser = new Parser({
-      fields: ["time", "pH", "temp", "tds", "turbidity"],
-    });
+    const header = [
+      "entry_id",
+      "created_at_utc",
+      "ph",
+      "estimated_tds_ppm",
+      "temperature_c",
+      "status_code",
+    ];
 
-    const csv = parser.parse(feeds);
+    const rows = samples.map((sample) =>
+      [
+        sample.entryId,
+        sample.createdAt,
+        sample.ph,
+        sample.tds,
+        sample.temperature,
+        sample.statusCode,
+      ]
+        .map(csvCell)
+        .join(",")
+    );
 
-    return new NextResponse(csv, {
+    const csv = [header.join(","), ...rows].join("\n");
+
+    return new Response(csv, {
+      status: 200,
       headers: {
-        "Content-Type": "text/csv",
-        "Content-Disposition": 'attachment; filename="water_history.csv"',
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition":
+          'attachment; filename="pani-bondhu-water-data.csv"',
+        "Cache-Control": "no-store, max-age=0",
       },
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Could not export data" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to export data.";
+
+    return new Response(message, {
+      status: 503,
+    });
   }
 }

@@ -1,16 +1,6 @@
-type Source = {
-  id: string;
-  nameBn: string;
-  nameEn: string;
-  pH: number;
-  temp: number;
-  tds: number;
-  turbidity: number;
-  score: number;
-  status: "Safe" | "Caution" | "Unsafe";
-  bestUseBn: string;
-  noteBn: string;
-};
+import type {
+  CompareProfile,
+} from "@/lib/types";
 
 export default function SourceHighlightCard({
   title,
@@ -18,50 +8,60 @@ export default function SourceHighlightCard({
   tone,
 }: {
   title: string;
-  source: Source;
+  source: CompareProfile;
   tone: "best" | "worst";
 }) {
-  const ui =
+  const classes =
     tone === "best"
-      ? {
-          wrap: "from-emerald-50 to-green-100 border-emerald-300",
-          badge: "bg-emerald-600 text-white",
-          emoji: "🏆",
-        }
-      : {
-          wrap: "from-rose-50 to-red-100 border-rose-300",
-          badge: "bg-rose-600 text-white",
-          emoji: "⚠️",
-        };
+      ? "from-emerald-50 to-green-100 border-emerald-300"
+      : "from-rose-50 to-red-100 border-rose-300";
+
+  const badge =
+    tone === "best"
+      ? "bg-emerald-600"
+      : "bg-rose-600";
 
   return (
-    <div className={`rounded-3xl border-2 bg-gradient-to-r ${ui.wrap} p-6 shadow-lg`}>
-      <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${ui.badge}`}>
-        <span>{ui.emoji}</span>
-        <span>{title}</span>
-      </div>
+    <article
+      className={`rounded-3xl border-2 bg-gradient-to-r p-6 shadow-lg ${classes}`}
+    >
+      <span
+        className={`inline-flex rounded-full px-4 py-2 text-sm font-bold text-white ${badge}`}
+      >
+        {title}
+      </span>
 
-      <div className="mt-4">
-        <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-          {source.nameBn}
-        </h3>
-        <p className="text-slate-600 mt-1">{source.nameEn}</p>
-      </div>
+      <h3 className="mt-4 text-2xl font-extrabold text-slate-900 md:text-3xl">
+        {source.nameBn}
+      </h3>
+
+      <p className="mt-1 text-slate-600">
+        {source.nameEn}
+      </p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-white p-3 shadow-sm">
-          <p className="text-sm text-slate-500">Safety Score</p>
-          <p className="text-2xl font-bold text-slate-900">{source.score}/100</p>
+          <p className="text-sm text-slate-500">
+            Safety score
+          </p>
+          <p className="text-2xl font-bold">
+            {source.score}/100
+          </p>
         </div>
+
         <div className="rounded-2xl bg-white p-3 shadow-sm">
-          <p className="text-sm text-slate-500">Best Use</p>
-          <p className="text-base font-bold text-slate-900">{source.bestUseBn}</p>
+          <p className="text-sm text-slate-500">
+            Suggested use
+          </p>
+          <p className="font-bold">
+            {source.bestUseBn}
+          </p>
         </div>
       </div>
 
-      <p className="mt-4 text-base md:text-lg font-medium text-slate-800 leading-8">
+      <p className="mt-4 text-base font-medium leading-8 text-slate-800 md:text-lg">
         {source.noteBn}
       </p>
-    </div>
+    </article>
   );
 }

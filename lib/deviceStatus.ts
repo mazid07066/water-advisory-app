@@ -1,79 +1,98 @@
-export type DeviceState = "ON" | "OFF";
+import type { DeviceStatusInfo } from "@/lib/types";
 
-export type DeviceStatusInfo = {
-  state: DeviceState;
-  labelBn: string;
-  messageBn: string;
-  lastUpdatedText: string;
-  minutesAgo: number | null;
-  isLive: boolean;
-};
+const ONLINE_THRESHOLD_MINUTES = 2;
+const OFFLINE_THRESHOLD_MINUTES = 10;
 
-export function getDeviceStatus(
-  lastUpdatedIso: string,
-  thresholdMinutes = 30
-): DeviceState {
-  const lastUpdated = new Date(lastUpdatedIso).getTime();
-
-  if (Number.isNaN(lastUpdated)) {
-    return "OFF";
+export function formatBanglaDateTime(
+  isoDate: string | null | undefined
+): string {
+  if (!isoDate) {
+    return "সময় পাওয়া যায়নি";
   }
 
-  const now = Date.now();
-  const diffMinutes = (now - lastUpdated) / (1000 * 60);
+  const date = new Date(isoDate);
 
-  return diffMinutes <= thresholdMinutes ? "ON" : "OFF";
+  if (Number.isNaN(date.getTime())) {
+    return "সময় পাওয়া যায়নি";
+  }
+
+  return new Intl.DateTimeFormat("bn-BD", {
+    timeZone: "Asia/Dhaka",
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(date);
 }
 
 export function getDeviceStatusInfo(
-  lastUpdatedIso: string,
-  thresholdMinutes = 30
+  lastUpdatedIso: string | null | undefined
 ): DeviceStatusInfo {
-  const lastUpdated = new Date(lastUpdatedIso).getTime();
+  const lastUpdatedText =
+    formatBanglaDateTime(lastUpdatedIso);
 
-  if (Number.isNaN(lastUpdated)) {
+  if (!lastUpdatedIso) {
     return {
-      state: "OFF",
-      labelBn: "সেন্সর স্ট্যাটাস: OFF",
-      messageBn: "সর্বশেষ আপডেট সময় পাওয়া যায়নি।",
-      lastUpdatedText: "অজানা সময়",
-      minutesAgo: null,
-      isLive: false,
+      isOnline: false,
+      status: "unknown",
+      labelBn: "অজানা",
+      descriptionBn:
+        "সর্বশেষ ডেটার সময় পাওয়া যায়নি।",
+      ageMinutes: null,
+      lastUpdatedText,
     };
   }
 
-  const now = Date.now();
-  const diffMinutes = Math.max(0, Math.floor((now - lastUpdated) / (1000 * 60)));
-  const state: DeviceState = diffMinutes <= thresholdMinutes ? "ON" : "OFF";
+  const date = new Date(lastUpdatedIso);
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      isOnline: false,
+      status: "unknown",
+      labelBn: "অজানা",
+      descriptionBn:
+        "সর্বশেষ ডেটার সময় সঠিক নয়।",
+      ageMinutes: null,
+      lastUpdatedText,
+    };
+  }
+
+  const ageMinutes = Math.max(
+    0,
+    (Date.now() - date.getTime()) / 60000
+  );
+
+  if (ageMinutes <= ONLINE_THRESHOLD_MINUTES) {
+    return {
+      isOnline: true,
+      status: "online",
+      labelBn: "চালু",
+      descriptionBn:
+        "সেন্সর থেকে সাম্প্রতিক ডেটা পাওয়া যাচ্ছে।",
+      ageMinutes,
+      lastUpdatedText,
+    };
+  }
+
+  if (ageMinutes <= OFFLINE_THRESHOLD_MINUTES) {
+    return {
+      isOnline: false,
+      status: "unknown",
+      labelBn: "সংযোগ অনিশ্চিত",
+      descriptionBn:
+        "নতুন ডেটা আসতে কিছুটা বিলম্ব হচ্ছে।",
+      ageMinutes,
+      lastUpdatedText,
+    };
+  }
 
   return {
-    state,
-    labelBn: state === "ON" ? "সেন্সর স্ট্যাটাস: ON" : "সেন্সর স্ট্যাটাস: OFF",
-    messageBn:
-      state === "ON"
-        ? "সেন্সর বর্তমানে সক্রিয় আছে।"
-        : "সেন্সর বর্তমানে বন্ধ। শেষ আপলোড হওয়া ডেটা দেখানো হচ্ছে।",
-    lastUpdatedText: formatBanglaDateTime(lastUpdatedIso),
-    minutesAgo: diffMinutes,
-    isLive: state === "ON",
+    isOnline: false,
+    status: "offline",
+    labelBn: "বন্ধ",
+    descriptionBn:
+      "সেন্সর নতুন ডেটা পাঠাচ্ছে না; সর্বশেষ সংরক্ষিত মান দেখানো হচ্ছে।",
+    ageMinutes,
+    lastUpdatedText,
   };
 }
 
-export function formatBanglaDateTime(iso: string): string {
-  const date = new Date(iso);
-
-  if (Number.isNaN(date.getTime())) {
-    return "অজানা সময়";
-  }
-
-  return date.toLocaleString("en-GB", {
-    timeZone: "Asia/Dhaka",
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
+export const getDeviceStatus = getDeviceStatusInfo;

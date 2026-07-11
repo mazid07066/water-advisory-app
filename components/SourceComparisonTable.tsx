@@ -1,17 +1,25 @@
-import type { CompareProfile } from "@/lib/types";
+import type {
+  CompareProfile,
+} from "@/lib/types";
 
-function badgeStyle(status: CompareProfile["status"]) {
+function badgeStyle(
+  status: CompareProfile["status"]
+): string {
   if (status === "Safe") {
-    return "bg-emerald-100 text-emerald-800 border border-emerald-300";
+    return "border border-emerald-300 bg-emerald-100 text-emerald-800";
   }
+
   if (status === "Caution") {
-    return "bg-amber-100 text-amber-800 border border-amber-300";
+    return "border border-amber-300 bg-amber-100 text-amber-800";
   }
-  return "bg-rose-100 text-rose-800 border border-rose-300";
+
+  return "border border-rose-300 bg-rose-100 text-rose-800";
 }
 
-function statusBn(status: CompareProfile["status"]) {
-  if (status === "Safe") return "নিরাপদ";
+function statusBn(
+  status: CompareProfile["status"]
+): string {
+  if (status === "Safe") return "গ্রহণযোগ্য";
   if (status === "Caution") return "সতর্কতা";
   return "অনিরাপদ";
 }
@@ -23,42 +31,64 @@ export default function SourceComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-lg">
-      <table className="w-full min-w-[980px] text-base">
+      <table className="w-full min-w-[850px] text-base">
         <thead className="bg-slate-100">
           <tr>
-            <th className="p-4 text-left font-bold text-slate-900">উৎস</th>
-            <th className="p-4 text-center font-bold text-slate-900">ক্যালিব্রেটেড pH</th>
-            <th className="p-4 text-center font-bold text-slate-900">তাপমাত্রা</th>
-            <th className="p-4 text-center font-bold text-slate-900">TDS</th>
-            <th className="p-4 text-center font-bold text-slate-900">ঘোলাভাব</th>
-            <th className="p-4 text-center font-bold text-slate-900">স্কোর</th>
-            <th className="p-4 text-center font-bold text-slate-900">অবস্থা</th>
-            <th className="p-4 text-left font-bold text-slate-900">ব্যবহার</th>
+            <th className="p-4 text-left">
+              উৎস
+            </th>
+            <th className="p-4 text-center">
+              pH
+            </th>
+            <th className="p-4 text-center">
+              TDS
+            </th>
+            <th className="p-4 text-center">
+              Temperature
+            </th>
+            <th className="p-4 text-center">
+              Score
+            </th>
+            <th className="p-4 text-center">
+              Status
+            </th>
+            <th className="p-4 text-left">
+              Suggested use
+            </th>
           </tr>
         </thead>
 
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-t border-slate-200 align-top">
+            <tr
+              key={row.id}
+              className="border-t border-slate-200"
+            >
               <td className="p-4">
-                <div className="font-bold text-slate-900">{row.nameBn}</div>
-                <div className="text-sm text-slate-500">{row.nameEn}</div>
+                <p className="font-bold text-slate-900">
+                  {row.nameBn}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {row.nameEn}
+                </p>
               </td>
-              <td className="p-4 text-center font-semibold text-slate-800">
-                {row.pH.toFixed(2)}
+
+              <td className="p-4 text-center font-semibold">
+                {row.ph.toFixed(2)}
               </td>
-              <td className="p-4 text-center font-semibold text-slate-800">
-                {row.temp.toFixed(2)} °C
+
+              <td className="p-4 text-center font-semibold">
+                {row.tds.toFixed(1)} ppm
               </td>
-              <td className="p-4 text-center font-semibold text-slate-800">
-                {row.tds.toFixed(2)} ppm
+
+              <td className="p-4 text-center font-semibold">
+                {row.temperature.toFixed(1)} °C
               </td>
-              <td className="p-4 text-center font-semibold text-slate-800">
-                {row.turbidity.toFixed(2)} NTU
-              </td>
-              <td className="p-4 text-center font-bold text-slate-900">
+
+              <td className="p-4 text-center font-bold">
                 {row.score}/100
               </td>
+
               <td className="p-4 text-center">
                 <span
                   className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${badgeStyle(
@@ -68,7 +98,8 @@ export default function SourceComparisonTable({
                   {statusBn(row.status)}
                 </span>
               </td>
-              <td className="p-4 text-slate-800 font-medium">
+
+              <td className="p-4 font-medium text-slate-800">
                 {row.bestUseBn}
               </td>
             </tr>

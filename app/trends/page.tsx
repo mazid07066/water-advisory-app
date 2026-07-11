@@ -1,27 +1,59 @@
 import TrendChart from "@/components/TrendChart";
-import { fetchHistoryFeed } from "@/lib/thingspeak";
-import { parseSample, smoothSamples, type SensorSample } from "@/lib/preprocess";
+
+import {
+  fetchHistoryFeed,
+} from "@/lib/thingspeak";
+
+import {
+  parseSample,
+  smoothSamples,
+  type SensorSample,
+} from "@/lib/preprocess";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function TrendsPage() {
   let history: SensorSample[] = [];
+  let errorMessage: string | null = null;
 
   try {
-    const historyData = await fetchHistoryFeed(150);
-    const parsedHistory: SensorSample[] = (historyData.feeds || []).map(parseSample);
-    history = smoothSamples(parsedHistory);
+    const response =
+      await fetchHistoryFeed(150);
+
+    const parsed =
+      (response.feeds || []).map(
+        parseSample
+      );
+
+    history = smoothSamples(parsed);
   } catch (error) {
-    console.error("Trends page load failed:", error);
+    errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Trend data could not be loaded.";
   }
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">পানির প্রবণতা বিশ্লেষণ</h1>
-        <p className="text-lg text-slate-700">
-          সর্বশেষ সেন্সর ডেটার ট্রেন্ড এখানে দেখা যাবে।
-        </p>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header>
+          <h1 className="text-3xl font-black text-slate-950 md:text-4xl">
+            পানির পরিমাপের প্রবণতা
+          </h1>
+
+          <p className="mt-2 text-lg text-slate-700">
+            pH, আনুমানিক TDS এবং তাপমাত্রার
+            সাম্প্রতিক পরিবর্তন।
+          </p>
+        </header>
+
+        {errorMessage ? (
+          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-rose-950">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <TrendChart data={history} />
       </div>
     </main>

@@ -1,142 +1,115 @@
-import { calibrateSample, type RawSensorValues } from "@/lib/calibration";
+import type {
+  ThingSpeakFeed,
+  WaterStatusCode,
+} from "@/lib/types";
 
 export type SensorSample = {
   time: string;
-
-  // calibrated values used by dashboard and decision engine
   pH: number;
   temp: number;
   tds: number;
-  turbidity: number;
-
-  // raw values preserved for technical transparency
-  rawPH?: number;
-  rawTemp?: number;
-  rawTDS?: number;
-  rawTurbidity?: number;
-
-  statusCode?: number;
-  mappingMode?: "current_web" | "old_nodemcu" | "unknown";
+  statusCode: WaterStatusCode | null;
 };
 
 function safeNumber(value: unknown): number {
-  const n = parseFloat(String(value ?? ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeTemp(value: number): number {
-  if (value > 45 && value < 130) {
-    return ((value - 32) * 5) / 9;
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return 0;
   }
 
-  return value;
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function isLikelyTemperature(value: number): boolean {
-  const c = normalizeTemp(value);
-  return c >= 0 && c <= 50;
-}
+function statusCode(
+  value: unknown
+): WaterStatusCode | null {
+  const parsed = Math.round(safeNumber(value));
 
-export function parseSample(feed: any): SensorSample {
-  const f1 = safeNumber(feed?.field1);
-  const f2 = safeNumber(feed?.field2);
-  const f3 = safeNumber(feed?.field3);
-  const f4 = safeNumber(feed?.field4);
-  const f5 = Math.round(safeNumber(feed?.field5));
-
-  /*
-    Supported ThingSpeak mappings:
-
-    current_web:
-    field1 = pH
-    field2 = Temperature
-    field3 = TDS
-    field4 = Turbidity
-
-    old_nodemcu:
-    field1 = pH
-    field2 = TDS
-    field3 = Turbidity
-    field4 = Temperature
-  */
-
-  const field2LooksTemp = isLikelyTemperature(f2);
-  const field4LooksTemp = isLikelyTemperature(f4);
-
-  let raw: RawSensorValues;
-  let mappingMode: SensorSample["mappingMode"];
-
-  if (field2LooksTemp && !field4LooksTemp) {
-    raw = {
-      pH: f1,
-      temp: f2,
-      tds: f3,
-      turbidity: f4,
-    };
-    mappingMode = "current_web";
-  } else if (!field2LooksTemp && field4LooksTemp) {
-    raw = {
-      pH: f1,
-      temp: f4,
-      tds: f2,
-      turbidity: f3,
-    };
-    mappingMode = "old_nodemcu";
-  } else {
-    raw = {
-      pH: f1,
-      temp: f2,
-      tds: f3,
-      turbidity: f4,
-    };
-    mappingMode = "unknown";
+  if (
+    parsed === 1 ||
+    parsed === 2 ||
+    parsed === 3 ||
+    parsed === 4
+  ) {
+    return parsed;
   }
 
-  const calibrated = calibrateSample(raw);
+  return null;
+}
 
+export function parseSample(
+  feed: ThingSpeakFeed
+): SensorSample {
   return {
-    time: feed?.created_at ?? new Date().toISOString(),
+    time:
+      feed.created_at ||
+      new Date().toISOString(),
 
-    pH: calibrated.pH,
-    temp: calibrated.temp,
-    tds: calibrated.tds,
-    turbidity: calibrated.turbidity,
-
-    rawPH: raw.pH,
-    rawTemp: raw.temp,
-    rawTDS: raw.tds,
-    rawTurbidity: raw.turbidity,
-
-    statusCode: f5,
-    mappingMode,
+    pH: safeNumber(feed.field1),
+    tds: safeNumber(feed.field2),
+    temp: safeNumber(feed.field3),
+    statusCode: statusCode(feed.field4),
   };
 }
 
-export function median(values: number[]): number {
-  const valid = values.filter((v) => Number.isFinite(v));
+export function median(
+  values: number[]
+): number {
+  const valid = values.filter(
+    Number.isFinite
+  );
 
-  if (!valid.length) return 0;
-
-  const sorted = [...valid].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-
-  if (sorted.length % 2 !== 0) {
-    return sorted[mid];
+  if (valid.length === 0) {
+    return 0;
   }
 
-  return (sorted[mid - 1] + sorted[mid]) / 2;
+  const sorted = [...valid].sort(
+    (a, b) => a - b
+  );
+
+  const middle =
+    Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 1) {
+    return sorted[middle];
+  }
+
+  return (
+    sorted[middle - 1] +
+    sorted[middle]
+  ) / 2;
 }
 
-export function smoothSamples(samples: SensorSample[]): SensorSample[] {
-  return samples.map((sample, i, arr) => {
-    const window = arr.slice(Math.max(0, i - 2), Math.min(arr.length, i + 3));
+export function smoothSamples(
+  samples: SensorSample[]
+): SensorSample[] {
+  return samples.map(
+    (sample, index, allSamples) => {
+      const window = allSamples.slice(
+        Math.max(0, index - 2),
+        Math.min(
+          allSamples.length,
+          index + 3
+        )
+      );
 
-    return {
-      ...sample,
-      pH: median(window.map((x) => x.pH)),
-      temp: median(window.map((x) => x.temp)),
-      tds: median(window.map((x) => x.tds)),
-      turbidity: median(window.map((x) => x.turbidity)),
-    };
-  });
+      return {
+        ...sample,
+        pH: median(
+          window.map((item) => item.pH)
+        ),
+        tds: median(
+          window.map((item) => item.tds)
+        ),
+        temp: median(
+          window.map((item) => item.temp)
+        ),
+      };
+    }
+  );
 }

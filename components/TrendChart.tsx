@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  ResponsiveContainer,
-  LineChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend,
-  CartesianGrid,
 } from "recharts";
 
 type TrendPoint = {
@@ -16,71 +15,116 @@ type TrendPoint = {
   pH: number;
   temp: number;
   tds: number;
-  turbidity: number;
 };
 
-export default function TrendChart({ data }: { data: TrendPoint[] }) {
+function ParameterChart({
+  data,
+  dataKey,
+  title,
+  unit,
+}: {
+  data: TrendPoint[];
+  dataKey: "pH" | "temp" | "tds";
+  title: string;
+  unit: string;
+}) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-lg">
-      <div className="mb-4">
-        <h3 className="text-xl md:text-2xl font-bold text-slate-900">
-          সাম্প্রতিক প্রবণতা
-        </h3>
-        <p className="text-slate-600 text-sm md:text-base mt-1">
-          pH, তাপমাত্রা, TDS এবং ঘোলাভাবের ধারাবাহিক পরিবর্তন
-        </p>
-      </div>
+    <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-lg md:p-6">
+      <h3 className="text-xl font-bold text-slate-900">
+        {title}
+      </h3>
 
-      <div className="h-[420px] md:h-[500px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 25, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-            <XAxis dataKey="time" hide />
-            <YAxis stroke="#475569" />
+      <div className="mt-4 h-72">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
+          <LineChart
+            data={data}
+            margin={{
+              top: 10,
+              right: 20,
+              left: 0,
+              bottom: 0,
+            }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+            />
+
+            <XAxis
+              dataKey="time"
+              hide
+            />
+
+            <YAxis />
+
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#ffffff",
-                borderRadius: "16px",
-                border: "1px solid #cbd5e1",
-                color: "#0f172a",
-              }}
+              formatter={(value) => [
+                `${Number(value).toFixed(2)} ${unit}`,
+                title,
+              ]}
+              labelFormatter={(label) =>
+                new Intl.DateTimeFormat(
+                  "bn-BD",
+                  {
+                    timeZone: "Asia/Dhaka",
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }
+                ).format(new Date(String(label)))
+              }
             />
-            <Legend />
+
             <Line
               type="monotone"
-              dataKey="pH"
-              stroke="#2563eb"
+              dataKey={dataKey}
               strokeWidth={3}
               dot={false}
-              name="pH"
-            />
-            <Line
-              type="monotone"
-              dataKey="temp"
-              stroke="#f59e0b"
-              strokeWidth={3}
-              dot={false}
-              name="Temp"
-            />
-            <Line
-              type="monotone"
-              dataKey="tds"
-              stroke="#10b981"
-              strokeWidth={3}
-              dot={false}
-              name="TDS"
-            />
-            <Line
-              type="monotone"
-              dataKey="turbidity"
-              stroke="#ef4444"
-              strokeWidth={3}
-              dot={false}
-              name="Turbidity"
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </article>
+  );
+}
+
+export default function TrendChart({
+  data,
+}: {
+  data: TrendPoint[];
+}) {
+  if (data.length === 0) {
+    return (
+      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-950">
+        কোনো ঐতিহাসিক ডেটা পাওয়া যায়নি।
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <ParameterChart
+        data={data}
+        dataKey="pH"
+        title="pH Trend"
+        unit=""
+      />
+
+      <ParameterChart
+        data={data}
+        dataKey="tds"
+        title="Estimated TDS Trend"
+        unit="ppm"
+      />
+
+      <ParameterChart
+        data={data}
+        dataKey="temp"
+        title="Temperature Trend"
+        unit="°C"
+      />
     </div>
   );
 }
