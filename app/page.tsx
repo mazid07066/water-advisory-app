@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import DynamicSourceBadge from "@/components/DynamicSourceBadge";
 import LocationSourceCard from "@/components/LocationSourceCard";
 import ParameterCard from "@/components/ParameterCard";
 
@@ -24,10 +25,6 @@ import type {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const SOURCE_NAME =
-  process.env.NEXT_PUBLIC_SOURCE_NAME ||
-  "Brahmaputra Region";
-
 function statusStyles(
   status: AdvisoryResult["overallStatus"]
 ): string {
@@ -50,7 +47,8 @@ function statusLabel(
   status: AdvisoryResult["overallStatus"],
   language: Language
 ): string {
-  const dictionary = getDictionary(language);
+  const dictionary =
+    getDictionary(language);
 
   if (status === "Safe") {
     return dictionary.status.safe;
@@ -85,7 +83,8 @@ function deviceLabel(
   device: DeviceStatusInfo,
   language: Language
 ): string {
-  const dictionary = getDictionary(language);
+  const dictionary =
+    getDictionary(language);
 
   if (device.status === "online") {
     return dictionary.status.online;
@@ -112,11 +111,14 @@ function formatDateTime(
     return "Time unavailable";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Dhaka",
-    dateStyle: "medium",
-    timeStyle: "medium",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      timeZone: "Asia/Dhaka",
+      dateStyle: "medium",
+      timeStyle: "medium",
+    }
+  ).format(date);
 }
 
 async function getPageData(
@@ -128,11 +130,15 @@ async function getPageData(
   errorMessage: string | null;
 }> {
   try {
-    const sample = await fetchLatestSample();
+    const sample =
+      await fetchLatestSample();
 
     return {
       sample,
-      advisory: evaluateWater(sample, language),
+      advisory: evaluateWater(
+        sample,
+        language
+      ),
       device: getDeviceStatusInfo(
         sample.createdAt
       ),
@@ -150,11 +156,15 @@ async function getPageData(
 
     return {
       sample: null,
+
       advisory: evaluateWater(
         fallback,
         language
       ),
-      device: getDeviceStatusInfo(null),
+
+      device:
+        getDeviceStatusInfo(null),
+
       errorMessage:
         error instanceof Error
           ? error.message
@@ -164,8 +174,11 @@ async function getPageData(
 }
 
 export default async function HomePage() {
-  const language = await getLanguage();
-  const dictionary = getDictionary(language);
+  const language =
+    await getLanguage();
+
+  const dictionary =
+    getDictionary(language);
 
   const {
     sample,
@@ -193,10 +206,9 @@ export default async function HomePage() {
               </p>
 
               <div className="mt-5 flex flex-wrap gap-3">
-                <span className="rounded-full border border-white/30 bg-white/15 px-4 py-2 text-base font-bold backdrop-blur">
-                  📍 {dictionary.home.source}:{" "}
-                  {SOURCE_NAME}
-                </span>
+                <DynamicSourceBadge
+                  language={language}
+                />
 
                 <span
                   className={`rounded-full border px-4 py-2 text-base font-bold backdrop-blur ${deviceStyles(
@@ -204,7 +216,10 @@ export default async function HomePage() {
                   )}`}
                 >
                   {dictionary.home.sensor}:{" "}
-                  {deviceLabel(device, language)}
+                  {deviceLabel(
+                    device,
+                    language
+                  )}
                 </span>
               </div>
 
@@ -215,15 +230,18 @@ export default async function HomePage() {
                       sample.createdAt,
                       language
                     )
-                  : dictionary.home.unknownTime}
+                  : dictionary.home
+                      .unknownTime}
               </p>
 
               <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-blue-100">
                 {language === "bn"
                   ? device.descriptionBn
-                  : device.status === "online"
+                  : device.status ===
+                      "online"
                     ? "Recent data is being received from the sensor."
-                    : device.status === "offline"
+                    : device.status ===
+                        "offline"
                       ? "No new sensor data is being received; the most recently stored values are displayed."
                       : "The current sensor connection is uncertain."}
               </p>
@@ -233,28 +251,43 @@ export default async function HomePage() {
                   href="#drinking"
                   className="rounded-2xl bg-emerald-500 px-5 py-3 text-base font-extrabold text-white shadow-lg transition hover:bg-emerald-600"
                 >
-                  🥤 {dictionary.home.drinkingButton}
+                  🥤{" "}
+                  {
+                    dictionary.home
+                      .drinkingButton
+                  }
                 </a>
 
                 <a
                   href="#irrigation"
                   className="rounded-2xl bg-amber-500 px-5 py-3 text-base font-extrabold text-white shadow-lg transition hover:bg-amber-600"
                 >
-                  🌾 {dictionary.home.irrigationButton}
+                  🌾{" "}
+                  {
+                    dictionary.home
+                      .irrigationButton
+                  }
                 </a>
 
                 <Link
                   href="/api/export"
                   className="rounded-2xl bg-white/15 px-5 py-3 text-base font-extrabold text-white shadow-lg backdrop-blur transition hover:bg-white/25"
                 >
-                  📥 {dictionary.home.downloadButton}
+                  📥{" "}
+                  {
+                    dictionary.home
+                      .downloadButton
+                  }
                 </Link>
               </div>
             </div>
 
             <div className="rounded-3xl border border-white/25 bg-white/15 p-6 text-center backdrop-blur">
               <p className="text-base font-bold text-blue-50">
-                {dictionary.home.currentScore}
+                {
+                  dictionary.home
+                    .currentScore
+                }
               </p>
 
               <p className="mt-2 text-5xl font-black">
@@ -274,7 +307,10 @@ export default async function HomePage() {
         {errorMessage ? (
           <section className="rounded-3xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md">
             <h2 className="text-xl font-black">
-              {dictionary.home.loadErrorTitle}
+              {
+                dictionary.home
+                  .loadErrorTitle
+              }
             </h2>
 
             <p className="mt-2 text-base font-medium">
@@ -291,7 +327,11 @@ export default async function HomePage() {
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <div>
               <p className="inline-flex rounded-full bg-white/70 px-4 py-2 text-base font-extrabold shadow-sm">
-                {dictionary.home.overallStatus}:{" "}
+                {
+                  dictionary.home
+                    .overallStatus
+                }
+                :{" "}
                 {statusLabel(
                   advisory.overallStatus,
                   language
@@ -299,7 +339,10 @@ export default async function HomePage() {
               </p>
 
               <h2 className="mt-4 text-3xl font-black md:text-4xl">
-                {dictionary.home.decisionTitle}
+                {
+                  dictionary.home
+                    .decisionTitle
+                }
               </h2>
 
               <p className="mt-3 max-w-4xl text-base font-semibold leading-7 md:text-lg">
@@ -309,8 +352,12 @@ export default async function HomePage() {
 
             <div className="rounded-2xl bg-white/80 px-6 py-4 text-center shadow-sm">
               <p className="text-base font-bold">
-                {dictionary.home.safetyScore}
+                {
+                  dictionary.home
+                    .safetyScore
+                }
               </p>
+
               <p className="text-4xl font-black">
                 {advisory.score}/100
               </p>
@@ -320,30 +367,50 @@ export default async function HomePage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <ParameterCard
-            title={dictionary.home.ph}
-            value={sample?.ph ?? null}
+            title={
+              dictionary.home.ph
+            }
+            value={
+              sample?.ph ?? null
+            }
             icon="🧪"
             decimals={2}
-            note={advisory.phAssessment.messageBn}
+            note={
+              advisory.phAssessment
+                .messageBn
+            }
           />
 
           <ParameterCard
-            title={dictionary.home.tds}
-            value={sample?.tds ?? null}
+            title={
+              dictionary.home.tds
+            }
+            value={
+              sample?.tds ?? null
+            }
             unit="ppm"
             icon="💧"
             decimals={1}
-            note={dictionary.home.tdsNote}
+            note={
+              dictionary.home.tdsNote
+            }
           />
 
           <ParameterCard
-            title={dictionary.home.temperature}
-            value={sample?.temperature ?? null}
+            title={
+              dictionary.home
+                .temperature
+            }
+            value={
+              sample?.temperature ??
+              null
+            }
             unit="°C"
             icon="🌡️"
             decimals={1}
             note={
-              advisory.temperatureAssessment
+              advisory
+                .temperatureAssessment
                 .messageBn
             }
           />
@@ -359,8 +426,13 @@ export default async function HomePage() {
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg"
           >
             <h3 className="text-2xl font-black text-slate-950">
-              🥤 {dictionary.home.drinking}
+              🥤{" "}
+              {
+                dictionary.home
+                  .drinking
+              }
             </h3>
+
             <p className="mt-3 text-lg font-medium leading-8 text-slate-800">
               {advisory.drinking}
             </p>
@@ -368,8 +440,13 @@ export default async function HomePage() {
 
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
             <h3 className="text-2xl font-black text-slate-950">
-              🍲 {dictionary.home.cooking}
+              🍲{" "}
+              {
+                dictionary.home
+                  .cooking
+              }
             </h3>
+
             <p className="mt-3 text-lg font-medium leading-8 text-slate-800">
               {advisory.cooking}
             </p>
@@ -377,8 +454,13 @@ export default async function HomePage() {
 
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
             <h3 className="text-2xl font-black text-slate-950">
-              🧼 {dictionary.home.household}
+              🧼{" "}
+              {
+                dictionary.home
+                  .household
+              }
             </h3>
+
             <p className="mt-3 text-lg font-medium leading-8 text-slate-800">
               {advisory.bathing}
             </p>
@@ -389,8 +471,13 @@ export default async function HomePage() {
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg"
           >
             <h3 className="text-2xl font-black text-slate-950">
-              🌾 {dictionary.home.irrigation}
+              🌾{" "}
+              {
+                dictionary.home
+                  .irrigation
+              }
             </h3>
+
             <p className="mt-3 text-lg font-medium leading-8 text-slate-800">
               {advisory.irrigation}
             </p>
@@ -399,15 +486,24 @@ export default async function HomePage() {
 
         <section className="rounded-3xl border border-blue-200 bg-blue-50 p-6 shadow-md">
           <h3 className="text-xl font-black text-blue-950">
-            {dictionary.home.limitations}
+            {
+              dictionary.home
+                .limitations
+            }
           </h3>
 
           <p className="mt-3 text-base font-semibold leading-7 text-blue-950">
-            {advisory.measurementNoticeBn}
+            {
+              advisory
+                .measurementNoticeBn
+            }
           </p>
 
           <p className="mt-2 text-base font-semibold leading-7 text-blue-950">
-            {dictionary.home.turbidityRemoved}
+            {
+              dictionary.home
+                .turbidityRemoved
+            }
           </p>
         </section>
       </div>

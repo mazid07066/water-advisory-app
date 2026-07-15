@@ -31,7 +31,11 @@ type LocationData = {
   capturedAt?: string;
 };
 
-const STORAGE_KEY = "water_advisor_location";
+const STORAGE_KEY =
+  "water_advisor_location";
+
+const LOCATION_UPDATED_EVENT =
+  "water-advisor-location-updated";
 
 const EMPTY_LOCATION: LocationData = {
   label: "",
@@ -41,6 +45,14 @@ const EMPTY_LOCATION: LocationData = {
   accuracy: null,
   capturedAt: "",
 };
+
+function notifyLocationChanged(): void {
+  window.dispatchEvent(
+    new CustomEvent(
+      LOCATION_UPDATED_EVENT
+    )
+  );
+}
 
 function isValidLatLng(
   lat: string,
@@ -59,13 +71,17 @@ function isValidLatLng(
   );
 }
 
-function readStoredLocation(): LocationData | null {
+function readStoredLocation():
+  | LocationData
+  | null {
   if (typeof window === "undefined") {
     return null;
   }
 
   const stored =
-    window.localStorage.getItem(STORAGE_KEY);
+    window.localStorage.getItem(
+      STORAGE_KEY
+    );
 
   if (!stored) {
     return null;
@@ -117,7 +133,9 @@ function formatCapturedTime(
   }
 
   return new Intl.DateTimeFormat(
-    language === "bn" ? "bn-BD" : "en-GB",
+    language === "bn"
+      ? "bn-BD"
+      : "en-GB",
     {
       timeZone: "Asia/Dhaka",
       dateStyle: "medium",
@@ -205,6 +223,12 @@ export default function LocationSourceCard({
     setSaved(finalData);
     setLocation(finalData);
     setMessage(text.saved);
+
+    /*
+      Immediately update the source badge shown
+      near the top of the homepage.
+    */
+    notifyLocationChanged();
   }
 
   function saveManualLocation(): void {
@@ -294,6 +318,11 @@ export default function LocationSourceCard({
     });
 
     setMessage(text.removed);
+
+    /*
+      Immediately reset the source badge.
+    */
+    notifyLocationChanged();
   }
 
   const latitude = saved
@@ -429,9 +458,7 @@ export default function LocationSourceCard({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={
-                useCurrentLocation
-              }
+              onClick={useCurrentLocation}
               disabled={loading}
               className="rounded-xl bg-emerald-500 px-4 py-3 text-base font-bold text-white shadow transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -499,8 +526,7 @@ export default function LocationSourceCard({
                   setLocation({
                     ...location,
                     label:
-                      event.target
-                        .value,
+                      event.target.value,
                   })
                 }
                 placeholder={
@@ -521,8 +547,7 @@ export default function LocationSourceCard({
                   setLocation({
                     ...location,
                     lat:
-                      event.target
-                        .value,
+                      event.target.value,
                   })
                 }
                 inputMode="decimal"
@@ -544,8 +569,7 @@ export default function LocationSourceCard({
                   setLocation({
                     ...location,
                     lng:
-                      event.target
-                        .value,
+                      event.target.value,
                   })
                 }
                 inputMode="decimal"
@@ -560,9 +584,7 @@ export default function LocationSourceCard({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={
-                useCurrentLocation
-              }
+              onClick={useCurrentLocation}
               disabled={loading}
               className="rounded-xl bg-emerald-500 px-5 py-3 text-base font-bold text-white shadow transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
